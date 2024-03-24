@@ -4,5 +4,7 @@
 #pragma once
 
 #include <iostream>
+#include <complex>
+#include <cmath>
 
 // TODO: установите здесь ссылки на дополнительные заголовки, требующиеся для программы.
