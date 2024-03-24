@@ -23,8 +23,8 @@ public:
 	lns(const oldType& number)
 	{
 		//Before i think we can use only one times for object it's init operator.
-		if (number >= 0)	this->lns::lns(true, std::log2(number));
-		else				this->lns::lns(false, std::log2(number * (-1)));
+		if (number >= 0)	this->lns::lns(true, (double)std::log2((double)number));
+		else				this->lns::lns(false, (double)std::log2((double)number * (-1)));
 	}
 	void print()
 	{
@@ -56,22 +56,22 @@ public:
 
 	lns operator+(const lns& other)
 	{
-		return lns((NUMTYPE)(*this) + (NUMTYPE)(other)); // TODO: chenge it for not use lns and int.
+		return lns((NUMTYPE)(*this) + (NUMTYPE)(other)); // TODO: chenge it for calculate it wis cpecial formula x + s(y - x).
 	}
 
 	lns operator-(const lns& other)
 	{
-		return lns((NUMTYPE)(*this) - (NUMTYPE)(other)); // TODO: chenge it for not use lns and int.
+		return lns((NUMTYPE)(*this) - (NUMTYPE)(other)); // TODO: chenge it for calculate it wis cpecial formula x + d(y - x).
 	}
 
 	lns& operator+=(const lns& other)
 	{
-		this->lns::lns(*this + other); // TODO: chenge it for not use lns and int.
+		this->lns::lns(*this + other); // TODO: make it faster without makeing new lns us formula.
 		return *this;
 	}
 	lns& operator-=(const lns& other)
 	{
-		this->lns::lns(*this - other); // TODO: chenge it for not use lns and int.
+		this->lns::lns(*this - other); // TODO: make it faster without makeing new lns us formula.
 		return *this;
 	}
 	lns operator-() const
@@ -83,7 +83,7 @@ public:
 		return *this;
 	}
 
-	bool operator==(const lns& other) // Here exist problm: if this = -0 and other = +0 then it work wrong. TODO: solwe it.
+	bool operator==(const lns& other) // TODO: Here exist problem: if this = -0 and other = +0 then it work wrong. TODO: solwe it. or think how to solwe it
 	{
 		return (this->_isPositive == other._isPositive) && (this->_logNumber == other._logNumber);
 	}
@@ -103,15 +103,13 @@ public:
 			return this->_logNumber > other._logNumber;
 		}
 	}
-	// Convert to any type!!! it's ausem that we can do like down here.
 
 	template <typename OUTTYPE>
 	operator OUTTYPE() const
 	{
-		//std::cout << "( " << (_logNumber - 8) << ") ";
 		if (_isPositive)
-			return std::pow(2, _logNumber);
-		return -std::pow(2, _logNumber);
+			return std::pow(2, (double)_logNumber);
+		return -std::pow(2, (double)_logNumber);
 	}
 
 
