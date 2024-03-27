@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <cmath>
-using namespace std;
 // #include "bitset.h"
 
 #if SIMPLE_REALIZATION
@@ -30,34 +29,34 @@ public:
 	lns(oldType number) {
 		if (number >= 0) {
 			_sign = true;
-			_logValue = log2((NUMTYPE)number);
+			_logValue = std::log2((NUMTYPE)number);
 		}
 		else {
 			_sign = false;
-			_logValue = log2(-(NUMTYPE)number);
+			_logValue = std::log2(-(NUMTYPE)number);
 		}
 	}
 	// ------------------(end of init functions)------------------------
 	
 	// ---------------------(Arithmetic operators)--------------------
-	lns& operator*(const lns& other) const {
-		return *lns(this->_sign == other._sign, this->_logValue + other._logValue);
+	lns operator*(const lns& other) const {
+		return lns(this->_sign == other._sign, this->_logValue + other._logValue);
 	}
 
 	template<typename oldType>
-	friend lns& operator*(const lns& lognumber, const oldType& number) {
+	friend lns operator*(const lns& lognumber, const oldType& number) {
 		if (number >= 0)
-			return *lns(lognumber._sign == true, lognumber._logValue + log2((NUMTYPE)number));
+			return lns(lognumber._sign == true, lognumber._logValue + log2((NUMTYPE)number));
 		else
-			return *lns(lognumber._sign == false, lognumber._logValue + log2(-(NUMTYPE)number));
+			return lns(lognumber._sign == false, lognumber._logValue + log2(-(NUMTYPE)number));
 	}
 	
 	template<typename oldType>
-	friend lns& operator*(const oldType& number, const lns& lognumber) {
+	friend lns operator*(const oldType& number, const lns& lognumber) {
 		if (number >= 0)
-			return *lns(lognumber._sign == true, lognumber._logValue + log2((NUMTYPE)number));
+			return lns(lognumber._sign == true, lognumber._logValue + log2((NUMTYPE)number));
 		else
-			return *lns(lognumber._sign == false, lognumber._logValue + log2(-(NUMTYPE)number));
+			return lns(lognumber._sign == false, lognumber._logValue + log2(-(NUMTYPE)number));
 	}
 	
 	lns& operator/(const lns& other) const { // todo: maybe add check if other = 0+ or 0-
@@ -80,15 +79,15 @@ public:
 			return *lns(lognumber._sign == false, log2((NUMTYPE)number) - lognumber._logValue);
 	}
 	
-	lns& operator+() const { //mistake: &
-		return *lns(this->_sign, this->_logValue);
+	lns operator+() const {
+		return lns(this->_sign, this->_logValue);
 	}
 
-	lns& operator-() const { //mistake: &
-		return *lns(!this->_sign, this->_logValue);
+	lns operator-() const {
+		return lns(!this->_sign, this->_logValue);
 	}
 
-	lns& operator++() { // really bad. need to fix //as i remember here we don't need &
+	lns operator++() { // really bad. need to fix
 		NUMTYPE tmp = pow(2, this->_logValue) + (NUMTYPE)1;
 		std::cout << tmp << "\n";
 		if (tmp >= 0) {
@@ -99,10 +98,10 @@ public:
 			this->_logValue = log2(-tmp);
 			this->_sign = false;
 		}
-		return *lns(this->_sign, this->_logValue);
+		return lns(this->_sign, this->_logValue);
 	}
 
-	lns& operator++(int) { // same. need to fix //as i remember here we don't need &
+	lns operator++(int) { // same. need to fix
 		NUMTYPE tmp = pow(2, this->_logValue) + (NUMTYPE)1;
 		if (tmp >= 0) {
 			this->_logValue = log2(tmp);
@@ -112,7 +111,7 @@ public:
 			this->_logValue = log2(-tmp);
 			this->_sign = false;
 		}
-		return *lns(this->_sign, log2(tmp - 1));
+		return lns(this->_sign, log2(tmp - 1));
 	}
 
 	lns& operator--() { // really bad. need to fix //we need to return not lns& it;s wrong, everywhere we return new lns we should return just lns, without &
@@ -129,7 +128,7 @@ public:
 		return *lns(this->_sign, this->_logValue);
 	}
 
-	lns& operator--(int) { // same. need to fix
+	lns operator--(int) { // same. need to fix
 		NUMTYPE tmp = pow(2, this->_logValue) - (NUMTYPE)1;
 		if (tmp >= 0) {
 			this->_logValue = log2(tmp);
@@ -139,15 +138,16 @@ public:
 			this->_logValue = log2(-tmp);
 			this->_sign = false;
 		}
-		return *lns(this->_sign, log2(tmp + 1));
+		return lns(this->_sign, log2(tmp + 1));
 	}
 	// TODO: a % b, a + b, a - b
 	// ---------------------(end of arithmetic  operators)--------------------
 	
 	// ---------------------(Assignment operators)--------------------
 	lns& operator=(const lns& other) {
-		//here we need to set this->val and this.sign to other's.
-		return *this; //BRO we need to return this here!!!!
+		this->_sign = other._sign;
+		this->_logValue = other._logValue;
+		return *this;
 	}
 
 	lns& operator+=(const lns& other) {
@@ -161,55 +161,40 @@ public:
 	
 	// ---------------------(end of assignment operators)--------------------
 	// ---------------------(Comparison and relational operators)--------------------
-	bool operator==(const lns& other)
-	{
+	bool operator==(const lns& other) {
 		return ((this->_sign == other._sign) && (this->_logValue == other._logValue) || 
 		(this->_logValue == 0 && other._logValue == 0));
 	}
 
-	bool operator!=(const lns& other) {
-		return ((this->_sign != other._sign || this->_logValue != other._logValue) &&
-		!(this->_logValue == 0 && other._logValue == 0));
-	}
-
 	bool operator<(const lns& other) { // Here exist problm: if this = -0 and other = +0 then it work wrong. TODO: solwe it.
-		if (this->_isPositive) {
-			if (other._isPositive)
-				return this->_logNumber < other._logNumber;
+		if (this->_sign) {
+			if (other._sign)
+				return this->_logValue < other._logValue;
 			return false;
 		}
 		else {
-			if (other._isPositive)
+			if (other._sign)
 				return true;
-			return this->_logNumber > other._logNumber;
+			return this->_logValue > other._logValue;
 		}
 	}
 	
 	bool operator>(const lns& other) {
-		if (this->_isPositive) {
-			if (other._isPositive)
-				return this->_logNumber > other._logNumber;
-			return true;
-		}
-		else {
-			if (other._isPositive)
-				return false;
-			return this->_logNumber < other._logNumber;
-		}
+		return !(operator==(other)) || !(operator<(other));
 	}
 	
 	bool operator>=(const lns& other) {
-		if (this->_isPositive) {
-			if (other._isPositive)
-				return this->_logNumber > other._logNumber;
-			return true;
-		}
-		else {
-			if (other._isPositive)
-				return false;
-			return this->_logNumber < other._logNumber;
-		}
+		return (operator>(other)) || (operator==(other));
 	}
+
+	bool operator<=(const lns& other) {
+		return (operator<(other)) || (operator==(other));
+	}
+
+	bool operator!=(const lns& other) {
+		return !(operator==(other));
+	}
+
 	// ---------------------(end of comparison and relational operators)--------------------
 	/*
 
