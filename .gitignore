@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/.vscode
+tests.cpp
+*.exe
+CMakeLists.txt
+CMakePresets.json
+LogBaseNumeration.h
