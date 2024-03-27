@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cmath>
+using namespace std;
 // #include "bitset.h"
 
 #if SIMPLE_REALIZATION
@@ -79,15 +80,15 @@ public:
 			return *lns(lognumber._sign == false, log2((NUMTYPE)number) - lognumber._logValue);
 	}
 	
-	lns& operator+() const {
+	lns& operator+() const { //mistake: &
 		return *lns(this->_sign, this->_logValue);
 	}
 
-	lns& operator-() const {
+	lns& operator-() const { //mistake: &
 		return *lns(!this->_sign, this->_logValue);
 	}
 
-	lns& operator++() { // really bad. need to fix
+	lns& operator++() { // really bad. need to fix //as i remember here we don't need &
 		NUMTYPE tmp = pow(2, this->_logValue) + (NUMTYPE)1;
 		std::cout << tmp << "\n";
 		if (tmp >= 0) {
@@ -101,7 +102,7 @@ public:
 		return *lns(this->_sign, this->_logValue);
 	}
 
-	lns& operator++(int) { // same. need to fix
+	lns& operator++(int) { // same. need to fix //as i remember here we don't need &
 		NUMTYPE tmp = pow(2, this->_logValue) + (NUMTYPE)1;
 		if (tmp >= 0) {
 			this->_logValue = log2(tmp);
@@ -114,7 +115,7 @@ public:
 		return *lns(this->_sign, log2(tmp - 1));
 	}
 
-	lns& operator--() { // really bad. need to fix
+	lns& operator--() { // really bad. need to fix //we need to return not lns& it;s wrong, everywhere we return new lns we should return just lns, without &
 		NUMTYPE tmp = pow(2, this->_logValue) - (NUMTYPE)1;
 		std::cout << tmp << "\n";
 		if (tmp >= 0) {
@@ -145,15 +146,17 @@ public:
 	
 	// ---------------------(Assignment operators)--------------------
 	lns& operator=(const lns& other) {
-		return *other;
+		//here we need to set this->val and this.sign to other's.
+		return *this; //BRO we need to return this here!!!!
 	}
 
 	lns& operator+=(const lns& other) {
-		return *other;
-	}
-
-	lns& operator=(const lns& other) {
-		return *other;
+		//TODO: here you need to add this.val += other.val.
+		return *this;
+		//this function calls when you write: lns1 += lns2 <=> lns1.operator+=(lns2).
+		// he return this becouse this code should work: lns1 = lns2 += lns3
+		//it's equal to lns1.operator=(lns2.operator+=(lns3))
+		//if you return other then lns1 will be equal to lns3.
 	}
 	
 	// ---------------------(end of assignment operators)--------------------
