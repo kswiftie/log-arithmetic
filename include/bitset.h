@@ -37,7 +37,7 @@ typedef int64_t BITSET_BAZE;
 const int AFTER_DECIMAL_BIT_NUMBERS = 32;
 
 constexpr BITSET_BAZE GLOB_DIGITS = BITSET_BAZE(1) << AFTER_DECIMAL_BIT_NUMBERS; // экспонента
-#define EPS 20 // константа устанавливающая границы приближенности вычисления корня
+#define EPS 20  //is the constant for finding squere root where |real_root - root|*GLOB_DIGITS < EPS 
 
 //TODO: problem: if numbers is too big we should check it to not owerload. if it to small do the same check.(when it out of bounds!!!.
 

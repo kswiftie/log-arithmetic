@@ -62,22 +62,22 @@ public:
 
 	lns operator+(const lns& other)
 	{
-		return lns((NUMTYPE)(*this) + (NUMTYPE)(other)); // TODO: chenge it for calculate it wis cpecial formula x + s(y - x).
+		return lns((NUMTYPE)(*this) + (NUMTYPE)(other)); // TODO: change it for calculate it wis cpecial formula x + s(y - x).
 	}
 
 	lns operator-(const lns& other)
 	{
-		return lns((NUMTYPE)(*this) - (NUMTYPE)(other)); // TODO: chenge it for calculate it wis cpecial formula x + d(y - x).
+		return lns((NUMTYPE)(*this) - (NUMTYPE)(other)); // TODO: change it for calculate it wis cpecial formula x + d(y - x).
 	}
 
 	lns& operator+=(const lns& other)
 	{
-		this->lns::lns(*this + other); // TODO: make it faster without makeing new lns us formula.
+		this->lns::lns(*this + other); // TODO: make it faster without making new lns, just use formula.
 		return *this;
 	}
 	lns& operator-=(const lns& other)
 	{
-		this->lns::lns(*this - other); // TODO: make it faster without makeing new lns us formula.
+		this->lns::lns(*this - other); // TODO: make it faster without making new lns, just use formula.
 		return *this;
 	}
 	lns operator-() const //It's good as for me.
