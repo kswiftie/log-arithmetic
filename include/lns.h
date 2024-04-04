@@ -39,46 +39,164 @@ public:
 	// ------------------(end of init functions)------------------------
 	
 	// ---------------------(Arithmetic operators)--------------------
+	lns& operator*=(const lns& other) {
+		this->_sign = (other._sign ? this->_sign : !this->_sign);
+		this->_logValue += other._logValue;
+		return *this;
+	}
+
+	template <typename othertype>
+	lns& operator*=(const othertype& other) {
+		this->_sign = (((NUMTYPE)other >= 0) ? this->_sign : !this->_sign);
+		this->_logValue += std::log2((NUMTYPE)other);
+		return *this;
+	}
+
+	lns& operator/=(const lns& other) {
+		this->_sign = (other._sign ? this->_sign : !this->_sign);
+		this->_logValue -= other._logValue;
+		return *this;
+	}
+
+	template <typename othertype>
+	lns& operator/=(const othertype& other) {
+		this->_sign = (((NUMTYPE)other >= 0) ? this->_sign : !this->_sign);
+		this->_logValue -= std::log2((NUMTYPE)other);
+		return *this;
+	}
+	
+	lns& operator+=(const lns& other) {
+		if (!other._sign && this->_sign)
+			return operator-=(lns(1, other._logValue));
+		
+		if (other._sign && !this->_sign) {
+			NUMTYPE tmp = this->_logValue;
+			this->_sign = other._sign;
+			this->_logValue = other._logValue;
+			return operator-=(lns(1, tmp));
+		}
+		
+		this->_logValue += std::log2(1 + pow(2, other._logValue - this->_logValue));
+		return *this;
+	}
+
+	template<typename othertype>
+	lns& operator+=(const othertype& other) {
+		if ((other < 0) && this->_sign)
+			return operator-=(-other);
+		
+		if ((other >= 0) && !this->_sign) {
+			NUMTYPE tmp = this->_logValue;
+			this->_sign = (other >= 0) ? 1 : 0;
+			this->_logValue = std::log2((NUMTYPE)other);
+			return operator-=(pow(2, tmp));
+		}
+		NUMTYPE otherlog = (other >= 0) ? std::log2((NUMTYPE)other) : std::log2(-(NUMTYPE)other);
+		this->_logValue += std::log2(1 + pow(2, otherlog  - this->_logValue));
+		return *this;
+	}
+
+	lns& operator-=(const lns& other) {
+		if (!other._sign)
+			return operator+=(lns(1, other._logValue));
+		
+		if (other._sign && !this->_sign) {
+			this->_sign = 0;
+			this->_logValue = other._logValue;
+			return operator+=(lns(0, other._logValue));
+		}
+
+		NUMTYPE sb = 1 - pow(2, other._logValue - this->_logValue);
+		this->_sign = ((other._logValue > this->_logValue) ? 0 : this->_sign);
+		this->_logValue += std::log2((sb >= 0) ? sb : -sb);
+		return *this;
+	}
+
+	template<typename othertype>
+	lns& operator-=(const othertype& other) {
+		if (other < 0)
+			return operator+=(-other);
+		
+		if ((other >= 0) && !this->_sign) {
+			this->_sign = 0;
+			this->_logValue = std::log2((NUMTYPE)other);
+			return operator+=(-other);
+		}
+
+		NUMTYPE otherlog = (other >= 0) ? std::log2((NUMTYPE)other) : std::log2(-(NUMTYPE)other);
+		NUMTYPE sb = 1 - pow(2, otherlog - this->_logValue);
+		this->_sign = (otherlog > this->_logValue) ? 0 : this->_sign;
+		this->_logValue += std::log2((sb >= 0) ? sb : -sb);
+		return *this;
+	}
+
 	lns operator*(const lns& other) const {
-		return lns(this->_sign == other._sign, this->_logValue + other._logValue);
+		return lns((this->_sign) ? other._sign : !other._sign, this->_logValue + other._logValue);
+	}
+	
+	
+	template<typename othertype>
+	friend lns operator*(const lns& lognumber, const othertype& number) {
+		if (number >= 0)
+			return lns(lognumber._sign == true, lognumber._logValue + log2((NUMTYPE)number));
+		else
+			return lns(lognumber._sign == false, lognumber._logValue + log2(-(NUMTYPE)number));
 	}
 
-	template<typename oldType>
-	friend lns operator*(const lns& lognumber, const oldType& number) {
+	template<typename othertype>
+	friend lns operator*(const othertype& number, const lns& lognumber) {
 		if (number >= 0)
 			return lns(lognumber._sign == true, lognumber._logValue + log2((NUMTYPE)number));
 		else
 			return lns(lognumber._sign == false, lognumber._logValue + log2(-(NUMTYPE)number));
 	}
 	
-	template<typename oldType>
-	friend lns operator*(const oldType& number, const lns& lognumber) {
-		if (number >= 0)
-			return lns(lognumber._sign == true, lognumber._logValue + log2((NUMTYPE)number));
-		else
-			return lns(lognumber._sign == false, lognumber._logValue + log2(-(NUMTYPE)number));
-	}
 	
-	lns& operator/(const lns& other) const { // todo: maybe add check if other = 0+ or 0-
-		return *lns(this->_sign == other._sign, this->_logValue - other._logValue);
+	lns operator/(const lns& other) const {
+		return lns(this->_sign == other._sign, this->_logValue - other._logValue);
 	}
 
 	template<typename oldType>
-	friend lns& operator/(const lns& lognumber, const oldType& number) {
+	friend lns operator/(const lns& lognumber, const oldType& number) {
 		if (number >= 0)
-			return *lns(lognumber._sign == true, lognumber._logValue - log2((NUMTYPE)number));
+			return lns(lognumber._sign == true, lognumber._logValue - log2((NUMTYPE)number));
 		else
-			return *lns(lognumber._sign == false, lognumber._logValue - log2(-(NUMTYPE)number));
+			return lns(lognumber._sign == false, lognumber._logValue - log2(-(NUMTYPE)number));
 	}
 	
 	template<typename oldType>
-	friend lns& operator/(const oldType& number, const lns& lognumber) {
+	friend lns operator/(const oldType& number, const lns& lognumber) {
 		if (number >= 0)
-			return *lns(lognumber._sign == true, log2((NUMTYPE)number) - lognumber._logValue);
+			return lns(lognumber._sign == true, log2((NUMTYPE)number) - lognumber._logValue);
 		else
-			return *lns(lognumber._sign == false, log2((NUMTYPE)number) - lognumber._logValue);
+			return lns(lognumber._sign == false, log2((NUMTYPE)number) - lognumber._logValue);
 	}
 	
+	lns operator+(const lns& other) const {
+		if (!other._sign && this->_sign)
+			return operator-(lns(1, other._logValue));
+		
+		if (other._sign && !this->_sign) { // return other - this
+			NUMTYPE sb = 1 - pow(2, this->_logValue - other._logValue);
+			return lns(((this->_logValue > other._logValue) ? 0 : other._logValue), other._logValue + std::log2((sb >= 0) ? sb : -sb));
+		}
+
+		return lns(this->_sign, this->_logValue + std::log2(1 + pow(2, other._logValue - this->_logValue)));
+	}
+
+	lns operator-(const lns& other) const {
+		if (!other._sign)
+			return operator+(lns(1, other._logValue));
+		
+		if (other._sign && !this->_sign) { // return - other - this
+			return lns(0, this->_logValue + std::log2(1 + pow(2, other._logValue - this->_logValue)));
+		}
+
+		NUMTYPE sb = 1 - pow(2, other._logValue - this->_logValue);
+		return lns(((other._logValue > this->_logValue) ? 0 : this->_sign), this->_logValue + std::log2((sb >= 0) ? sb : -sb));
+	}
+	
+
 	lns operator+() const {
 		return lns(this->_sign, this->_logValue);
 	}
@@ -86,61 +204,59 @@ public:
 	lns operator-() const {
 		return lns(!this->_sign, this->_logValue);
 	}
+	
+	lns& operator++() {
+		if (this->_sign) {
+			this->_logValue += std::log2(1 + pow(2, -this->_logValue));
+			return *this;
+		}
 
-	lns operator++() { // really bad. need to fix
-		NUMTYPE tmp = pow(2, this->_logValue) + (NUMTYPE)1;
-		std::cout << tmp << "\n";
-		if (tmp >= 0) {
-			this->_logValue = log2(tmp);
-			this->_sign = true;
-		}
-		else {
-			this->_logValue = log2(-tmp);
-			this->_sign = false;
-		}
-		return lns(this->_sign, this->_logValue);
+		NUMTYPE sb = 1 - pow(2, this->_logValue);
+		this->_sign = (1 >= pow(2, this->_logValue)) ? 1 : 0;
+		this->_logValue = std::log2((sb >= 0) ? sb : -sb);
+		return *this;
 	}
 
-	lns operator++(int) { // same. need to fix
-		NUMTYPE tmp = pow(2, this->_logValue) + (NUMTYPE)1;
-		if (tmp >= 0) {
-			this->_logValue = log2(tmp);
-			this->_sign = true;
+	lns operator++(int) {
+		if (this->_sign) {
+			lns copy {*this};
+			this->_logValue += std::log2(1 + pow(2, -this->_logValue));
+			return copy;
 		}
-		else {
-			this->_logValue = log2(-tmp);
-			this->_sign = false;
-		}
-		return lns(this->_sign, log2(tmp - 1));
+		
+		lns copy {*this};
+		NUMTYPE sb = 1 - pow(2, this->_logValue);
+		this->_sign = (1 >= pow(2, this->_logValue)) ? 1 : 0;
+		this->_logValue = std::log2((sb >= 0) ? sb : -sb);
+		return copy;
 	}
 
-	lns& operator--() { // really bad. need to fix //we need to return not lns& it;s wrong, everywhere we return new lns we should return just lns, without &
-		NUMTYPE tmp = pow(2, this->_logValue) - (NUMTYPE)1;
-		std::cout << tmp << "\n";
-		if (tmp >= 0) {
-			this->_logValue = log2(tmp);
-			this->_sign = true;
+	lns& operator--() {
+		if (this->_sign) {
+			this->_sign = (1 < pow(2, this->_logValue)) ? 1 : 0;
+			NUMTYPE sb = 1 - pow(2, -this->_logValue);
+			this->_logValue += std::log2((sb >= 0) ? sb : -sb);
+			return *this;
 		}
-		else {
-			this->_logValue = log2(-tmp);
-			this->_sign = false;
-		}
-		return *lns(this->_sign, this->_logValue);
+		this->_logValue += std::log2(1 + pow(2, -this->_logValue));
+		return *this;
 	}
 
-	lns operator--(int) { // same. need to fix
-		NUMTYPE tmp = pow(2, this->_logValue) - (NUMTYPE)1;
-		if (tmp >= 0) {
-			this->_logValue = log2(tmp);
-			this->_sign = true;
+	lns operator--(int) {
+		if (this->_sign) {
+			lns copy {*this};
+			this->_sign = (1 < pow(2, this->_logValue)) ? 1 : 0;
+			NUMTYPE sb = 1 - pow(2, -this->_logValue);
+			this->_logValue += std::log2((sb >= 0) ? sb : -sb);
+			return copy;
 		}
-		else {
-			this->_logValue = log2(-tmp);
-			this->_sign = false;
-		}
-		return lns(this->_sign, log2(tmp + 1));
+
+		lns copy {*this};
+		this->_logValue += std::log2(1 + pow(2, -this->_logValue));
+		return copy;
 	}
-	// TODO: a % b, a + b, a - b
+
+	// TODO: a % b
 	// ---------------------(end of arithmetic  operators)--------------------
 	
 	// ---------------------(Assignment operators)--------------------
@@ -148,15 +264,6 @@ public:
 		this->_sign = other._sign;
 		this->_logValue = other._logValue;
 		return *this;
-	}
-
-	lns& operator+=(const lns& other) {
-		//TODO: here you need to add this.val += other.val.
-		return *this;
-		//this function calls when you write: lns1 += lns2 <=> lns1.operator+=(lns2).
-		// he return this becouse this code should work: lns1 = lns2 += lns3
-		//it's equal to lns1.operator=(lns2.operator+=(lns3))
-		//if you return other then lns1 will be equal to lns3.
 	}
 	
 	// ---------------------(end of assignment operators)--------------------
@@ -196,53 +303,12 @@ public:
 	}
 
 	// ---------------------(end of comparison and relational operators)--------------------
-	/*
-
-	lns& operator*=(const lns& other) // as easyy as it is.
-	{
-		this->_isPositive = (this->_isPositive == other._isPositive);
-		this->_logNumber += other._logNumber;
-		return *this;
+	template <typename TO_TYPE>
+	operator TO_TYPE() const {
+		return (TO_TYPE)((this->_sign) ? pow(2, this->_logValue) : -pow(2, this->_logValue));
 	}
 
-	lns& operator/=(const lns& other)
-	{
-		this->_isPositive = (this->_isPositive == other._isPositive);
-		this->_logNumber -= other._logNumber;
-		return *this;
-	}
-
-	lns operator+(const lns& other)
-	{
-		return lns((NUMTYPE)(*this) + (NUMTYPE)(other)); // TODO: chenge it for calculate it wis cpecial formula x + s(y - x).
-	}
-
-	lns operator-(const lns& other)
-	{
-		return lns((NUMTYPE)(*this) - (NUMTYPE)(other)); // TODO: chenge it for calculate it wis cpecial formula x + d(y - x).
-	}
-
-	lns& operator+=(const lns& other)
-	{
-		this->lns::lns(*this + other); // TODO: make it faster without makeing new lns us formula.
-		return *this;
-	}
-	lns& operator-=(const lns& other)
-	{
-		this->lns::lns(*this - other); // TODO: make it faster without makeing new lns us formula.
-		return *this;
-	}
-
-	// ---------------(to type operators)---------------------------
-	template <typename OUTTYPE>
-	operator OUTTYPE() const {
-		//TODO: we should to check size of _logNumber, if it too big we got a problem
-		if (_isPositive)
-			return std::pow(2, (double)_logNumber);
-		return -std::pow(2, (double)_logNumber);
-	}
-	*/
-	friend std::ostream& operator<< (std::ostream& os, const lns<NUMTYPE>& m) {
+	friend std::ostream& operator<<(std::ostream& os, const lns<NUMTYPE>& m) {
 		// TODO:here problem if number is too big we lost data when use (double)m, so we need to better wariant writing the answer.
 		os << ((m._sign) ? "" : "-") << pow(2, m._logValue);
 		return os;
