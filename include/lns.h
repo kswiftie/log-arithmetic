@@ -2,11 +2,11 @@
 #ifndef _INCLUDE_LNS_H_
 #define _INCLUDE_LNS_H_
 #include <iostream>
-#include "bitset.h"
+#include "fixedpoint.h"
 #if SIMPLE_REALIZATION
-#define STANDARD_BITSET_TYPE BITSET
+#define STANDARD_BITSET_TYPE FixedPoint
 #else
-#define STANDARD_BITSET_TYPE BITSET<>
+#define STANDARD_BITSET_TYPE FixedPoint<>
 #endif // SIMPLE_REALIZATION
 
 template <class NUMTYPE = STANDARD_BITSET_TYPE>
@@ -16,7 +16,7 @@ protected:
 	NUMTYPE _logNumber = 0;
 	bool _isPositive = 1;
 
-	lns(bool isPositive, NUMTYPE logNumber) : _isPositive(isPositive), _logNumber(logNumber) {}
+	lns(bool get_isPositive, NUMTYPE logNumber) : _isPositive(get_isPositive), _logNumber(logNumber) {}
 public:
 	// -----------------(DEBUG FUNCTION)------------------------
 	void print()
@@ -62,12 +62,12 @@ public:
 
 	lns operator+(const lns& other)
 	{
-		return lns((NUMTYPE)(*this) + (NUMTYPE)(other)); // TODO: change it for calculate it wis cpecial formula x + s(y - x).
+		return lns((NUMTYPE)(*this) + (NUMTYPE)(other)); // TODO: change it for calculate it wis cpecial formula _base + s(y - _base).
 	}
 
 	lns operator-(const lns& other)
 	{
-		return lns((NUMTYPE)(*this) - (NUMTYPE)(other)); // TODO: change it for calculate it wis cpecial formula x + d(y - x).
+		return lns((NUMTYPE)(*this) - (NUMTYPE)(other)); // TODO: change it for calculate it wis cpecial formula _base + d(y - _base).
 	}
 
 	lns& operator+=(const lns& other)
