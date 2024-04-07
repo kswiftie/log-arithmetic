@@ -53,7 +53,6 @@ double constexpr constexpr_pow(double base, int exponent) {
 #define INT_BIT_NUMBERS         32
 #define OUTPUT_BY_BITS          false
 
-
 typedef unsigned long long ULL;
 #define ULL_BITS ((int)(sizeof(ULL) * 8))
 
@@ -61,12 +60,11 @@ typedef unsigned long long ULL;
 template<std::size_t BEFORE_DECIMAL_BITS = INT_BIT_NUMBERS, std::size_t AFTER_DECIMAL_BITS = DECIMAL_BIT_NUMBERS>
 class FixedPoint {
 protected:
-    constexpr static int _Bits = BEFORE_DECIMAL_BITS + AFTER_DECIMAL_BITS;
+    constexpr static int _howBits = BEFORE_DECIMAL_BITS + AFTER_DECIMAL_BITS;
 public:
-    //typedef std::conditional<_Bits <= sizeof(unsigned) * 8, unsigned, bitset<_Bits>>::type BASE_TYPE;
-    typedef std::conditional<(_Bits <= ULL_BITS), ULL, bitset<_Bits>>::type BASE_TYPE;
-protected:
     //bitset is so slow, so if you want to use big nombers, you'll pay "twice".
+    typedef std::conditional<(_howBits <= ULL_BITS), ULL, bitset<_howBits>>::type BASE_TYPE;
+protected:
     BASE_TYPE _base = 0;
 
     bool _isPositive = true;
@@ -89,9 +87,9 @@ public:
 
     constexpr FixedPoint(const FixedPoint& other) = default;
 
-    template <typename TYPE_FROM>  requires (std::is_integral_v<TYPE_FROM> || std::is_floating_point_v<TYPE_FROM>)//it's for integers only// for is_floating_point we should add
+    template <typename TYPE_FROM>  requires (std::is_integral_v<TYPE_FROM> || std::is_floating_point_v<TYPE_FROM>)
     constexpr FixedPoint(const TYPE_FROM& val){
-        if constexpr (std::is_integral_v<TYPE_FROM>)//here is good as i think
+        if constexpr (std::is_integral_v<TYPE_FROM>)
         {
             if (val < 0)
             {
@@ -161,8 +159,6 @@ public:
         }
     }
 
-
-
     //--arithmetic operators--
     FixedPoint operator+(const FixedPoint& other) const
     { //is done
@@ -221,56 +217,38 @@ public:
     }
 
     FixedPoint operator*(const FixedPoint& other) const
-    {   //mul it like this: (a+b) * (c+d) = a * c + b * d + ...
-        //bool new_isPositive = this->_isPositive == other._isPositive;
-        //constexpr auto CLEAR_BEFORE_DECIMAL = std::is_same<BASE_TYPE, unsigned long long>::value ? (sizeof(unsigned long long) * 8 - AFTER_DECIMAL_BITS) : BEFORE_DECIMAL_BITS;
-        //auto& baseOne = this->get_base();
-        //auto& baseTwo = other.get_base();
-        //auto BEFORE_ONE = baseOne >> AFTER_DECIMAL_BITS;                                // (abcd|ef) -> (00ab|cd)
-        //auto AFTER__ONE = (baseOne << CLEAR_BEFORE_DECIMAL) >> CLEAR_BEFORE_DECIMAL;   // (abcd|ef) -> (0000|ef)
-        //auto BEFORE_TWO = baseTwo >> AFTER_DECIMAL_BITS;                                // (abcd|ef) -> (00ab|cd)
-        //auto AFTER__TWO = (baseTwo << CLEAR_BEFORE_DECIMAL) >> CLEAR_BEFORE_DECIMAL;   // (abcd|ef) -> (0000|ef)
-        ////std::cout << (bitset<_Bits>)BEFORE_ONE << std::endl;
-        ////std::cout << (bitset<_Bits>)AFTER__ONE << std::endl;
-        ////std::cout << (bitset<_Bits>)BEFORE_TWO << std::endl;
-        ////std::cout << (bitset<_Bits>)AFTER__TWO << std::endl;
-        //auto answer =
-        //    ((BEFORE_ONE * BEFORE_TWO) << AFTER_DECIMAL_BITS) +
-        //    BEFORE_ONE * AFTER__TWO + AFTER__ONE * BEFORE_TWO +
-        //    (mul_vith_shift_right(AFTER__TWO, AFTER__ONE, AFTER_DECIMAL_BITS)); //ACCURATE HERE WE HAVE THE PROBLEM THAT CUTTING IF FLOATING PART SIZE > THEN FIRST PART!!!
+    { 
         return MakeFixed(mul_vith_shift_right(this->get_base(), other.get_base(), AFTER_DECIMAL_BITS), this->_isPositive == other._isPositive);
     }
 
     FixedPoint operator/(const FixedPoint& other) const
     {
         bool new_isPositive = this->_isPositive == other._isPositive;
-        if constexpr (std::is_integral_v<BASE_TYPE>)
+        if constexpr (std::is_integral_v<BASE_TYPE>) // checking for zero!!
         {
-            if (other._base == 0) //divide by zero:(
-                return this->MakeFixed(ULLONG_MAX, new_isPositive);
-            std::cout << "test1: " << bitset<64>(this->_base << (int)floor(AFTER_DECIMAL_BITS * 0.5)) << std::endl;
-            return this->MakeFixed(((this->_base << (int)floor(AFTER_DECIMAL_BITS * 0.5)) / (other._base) << (int)ceil(AFTER_DECIMAL_BITS * 0.5)), new_isPositive);
-            // todo: hard place lost data ________A____ here
+            if (not (bool)other._base)
+                return this->MakeFixed(ULLONG_MAX, new_isPositive); //return maximum number base!
         }
         else
         {
             if (other._base.none())
-                return this->MakeFixed(bitset<_Bits>().set(), new_isPositive); //max base!
-            using extended = FixedPoint<_Bits, AFTER_DECIMAL_BITS>;
-            auto newBaze = (extended(*this).get_base() << AFTER_DECIMAL_BITS) / (extended(other).get_base());
-            return (decltype(*this))(extended().MakeFixed(newBaze, new_isPositive));
+                return this->MakeFixed(BASE_TYPE().set(), new_isPositive); //max base!
         }
+        using extended = FixedPoint<_howBits, AFTER_DECIMAL_BITS>;
+        auto newBase = (extended(*this).get_base() << AFTER_DECIMAL_BITS) / (extended(other).get_base());
+        return (decltype(*this))(extended().MakeFixed(newBase, new_isPositive));
     }
 
     FixedPoint& operator*=(const FixedPoint& other)
     {
-        *this = *this * other;
+        this->_base = mul_vith_shift_right(this->get_base(), other.get_base(), AFTER_DECIMAL_BITS);
+        this->_isPositive = (this->_isPositive == other._isPositive);
         return *this;
     }
 
     FixedPoint& operator/=(const FixedPoint& other)
     {
-        *this = *this / other;
+        *this = *this / other; //it's not easy way to make it faster. so let it here.
         return *this;
     }
 
@@ -356,13 +334,13 @@ public:
 
     FixedPoint& operator--() //prefix
     {
-        const auto ONE = FixedPoint(1);
+        constexpr auto ONE = FixedPoint(1);
         return *this -= ONE;
     }
 
     FixedPoint operator--(int) //postfix
     {
-        const auto ONE = FixedPoint(1);
+        constexpr auto ONE = FixedPoint(1);
         FixedPoint returnObject = *this;
         *this -= ONE;
         return returnObject;
@@ -380,9 +358,19 @@ public:
         }
         else
         {
-            if (_isPositive)
-                return (_base >> AFTER_DECIMAL_BITS).to_ullong();   // can be problem if (_baze >> AFTER_DECIMAL_BITS >> sizeof(long long)* 8) > 0
-            return -(_base >> AFTER_DECIMAL_BITS).to_ullong();      // becouse will be too big integer error from function to_ullpng()
+            // __V_____we use this if because if there are any set before 64 bits, then to_ullong() -> error.
+            if constexpr (BEFORE_DECIMAL_BITS < ULL_BITS) 
+            {
+                if (_isPositive)
+                    return (_base >> AFTER_DECIMAL_BITS).to_ullong();
+                return -(_base >> AFTER_DECIMAL_BITS).to_ullong();
+            }
+            else
+            {//cutting off the hiest bits for predict error.
+                if (_isPositive) 
+                    return (_base << (BEFORE_DECIMAL_BITS - ULL_BITS) >> (_howBits - ULL_BITS)).to_ullong();
+                return -(_base << (BEFORE_DECIMAL_BITS - ULL_BITS) >> (_howBits - ULL_BITS)).to_ullong();
+            }//actually if TO_TYPE is signed then return value can be less then 0. as i understand it's okay.
         }
     }
 
@@ -399,11 +387,11 @@ public:
         else
         {
             int iter = 0;
-            while (_base[_Bits - 1 - iter] == 0 and iter < _Bits - 1) iter++;
-            if (_base[_Bits - 1 - iter] == 0) return 0;
+            while (_base[_howBits - 1 - iter] == 0 and iter < _howBits - 1) iter++;
+            if (_base[_howBits - 1 - iter] == 0) return 0;
 
             int to_shift = 0;
-            int may_shift = (_Bits - iter - (int)(sizeof(ULL) * 8));
+            int may_shift = (_howBits - iter - (int)(sizeof(ULL) * 8));
             if (may_shift > 0)
                 to_shift = may_shift;
             TO_TYPE number = (TO_TYPE((_base >> to_shift).to_ullong())) * std::pow(2., to_shift) * to_int_mul;
@@ -422,66 +410,21 @@ public:
         }
         else
         {
-            return std::to_string(double(*this)); //TODO:::: it's bad because double is not enought!!!!
+            return std::to_string(double(*this)); //TODO:::: it's bad because double is not enough for seeing all bits!!!!
         }
     }
-    //------------DONE------------
-    //done: add <
-    //done: add > 
-    //done: add <= 
-    //done: add >=
-    //done: add ==     
-    //done: add !=     
-    //done: add +      
-    //done: add -      
-    //done: add +simple
-    //done: add -simple
-    //done: add ++()
-    //done: add ()++
-    //done: add --()
-    //done: add ()--
-    //done: add float/double -> bitset<three, fore>
-    //done: add += -- add realization += to bitset and change it!!!
-    //done: add -= -- add realization += to bitset and change it!!!
-    //done: add operator int() -(TO_TYPE)
-    //done: add operator double() -(TO_TYPE)
-    //done: think about better way double -> fixed!!!!
-    //done: let avay to_ullong - becouse of it's overflow :(
-    //done: add bitset<one, two> -> bitset<three, fore>
-    //done: double -> fixed - make better, becouse long long not so good for wery big double like 1E300 - if we will use fixed<1000, 1000>, it's can save it.
-    //todo: add * and / for bitset base!!!!
-    //done: add / for bitset
-    //done: add * for bitset
-    //done: add *
-    
-    //------------TO DO NOW------------
-    //todo:  //problem with mul of decimal parts!!
-    //done: add /
-
-    //------------TO DO------------
-    //todo: have a problem: if decimal part is too big then it's crashes for fixedpoint <- double (for int it's crashes)
-    //todo: add /= make better
-    //todo: add *= make better
-    //todo: add log2
-    //todo: add pow
-    //todo: add operator%
-    //todo: add operator%=
-    
-
-    //----------------DONT necessary------------
-    //todo: add realization bitset->big integers string - ne hochy delat!!!
-    //todo: rebuild realization bitset += bitset - done
 };
 template<int BEFORE, int DECIMAL>
 FixedPoint<BEFORE, DECIMAL> log2(const FixedPoint<BEFORE, DECIMAL>& other)
 {
     //one of the most important function for accuracy!!
+    //i don't know how to do it because has no realisation for int base.
     return log2((double)other); // big lost the data!!! fixed -> double -> log(double) -> double -> fixed -> return.
 }
 
 
 template<int BEFORE, int DECIMAL>
-std::ostream& operator<< (std::ostream& os, const FixedPoint<BEFORE, DECIMAL>& m){ // output for int base
+std::ostream& operator<< (std::ostream& os, const FixedPoint<BEFORE, DECIMAL>& m){
     return os << std::string(m);
 }
 
@@ -490,3 +433,52 @@ std::ostream& operator<< (std::ostream& os, const FixedPoint<BEFORE, DECIMAL>& m
 #endif // SIMPLE_REALIZATION
 
 #endif // !_INCLUDE_BITSET_H_
+//------------DONE------------
+//done: add <
+//done: add > 
+//done: add <= 
+//done: add >=
+//done: add ==     
+//done: add !=     
+//done: add +      
+//done: add -      
+//done: add +simple
+//done: add -simple
+//done: add ++()
+//done: add ()++
+//done: add --()
+//done: add ()--
+//done: add float/double -> bitset<three, fore>
+//done: add += -- add realization += to bitset and change it!!!
+//done: add -= -- add realization += to bitset and change it!!!
+//done: add operator int() -(TO_TYPE)
+//done: add operator double() -(TO_TYPE)
+//done: think about better way double -> fixed!!!!
+//done: let avay to_ullong - becouse of it's overflow :(
+//done: add bitset<one, two> -> bitset<three, fore>
+//done: double -> fixed - make better, becouse long long not so good for wery big double like 1E300 - if we will use fixed<1000, 1000>, it's can save it.
+//todo: add * and / for bitset base!!!!
+//done: add / for bitset
+//done: add * for bitset
+//done: add *
+//done: add /
+//done: add *= make better
+//done: problem with mul of decimal parts!!
+//done: solve crashes: (for (operator int()) it's crashes sometimes)
+
+//------------TO DO NOW------------
+//todo: have a problem: if decimal part is too big then it's crashes for (fixed point <- double)
+//todo: solwe bug when after decimal bits more then 500
+
+//------------TO DO------------
+//todo: add log2
+//todo: add pow
+//todo: add operator%
+//todo: add operator%=
+//todo: add realization bitset->big integers string - it's too boring but shell to do!!!
+
+
+//----------------DO NOT necessary------------
+// different answer in end of the decimal part for different realisation(but it's too small actually)
+//todo: add /= make better
+//todo: rebuild realization bitset += bitset and -= for faster.

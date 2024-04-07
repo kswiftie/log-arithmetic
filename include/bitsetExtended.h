@@ -63,7 +63,6 @@ std::bitset<N> operator-(const std::bitset<N>& b1, const std::bitset<N>& b2) {
     return result;
 }
 
-
 template<size_t N>
 std::bitset<N> operator/(const std::bitset<N>& dividend, const std::bitset<N>& divisor) {
     std::bitset<N> answer(0);
@@ -95,7 +94,7 @@ std::bitset<N> operator*(const std::bitset<N>& first, const std::bitset<N>& seco
 }
 
 template<size_t N>
-std::bitset<N> mul_vith_shift_right(const std::bitset<N>& first, const std::bitset<N>& second, int to_shift) {
+inline std::bitset<N> mul_vith_shift_right(const std::bitset<N>& first, const std::bitset<N>& second, int to_shift) {
     std::bitset<N> answer(0);
     for (int iter = 0, second_size = top_bit_set(second); iter <= second_size; iter++){
         if (second[iter]){
@@ -106,7 +105,38 @@ std::bitset<N> mul_vith_shift_right(const std::bitset<N>& first, const std::bits
     return answer;
 }
 
+inline unsigned long long mul_vith_shift_right(const unsigned long long left, const unsigned long long right, int to_shift)
+{
+    using ULL = unsigned long long;
+    using uint = unsigned int;
+    constexpr int uintPerULL = sizeof(ULL) / sizeof(uint);
+    constexpr int halfULLBits = sizeof(ULL) * 4;
+    static_assert(sizeof(ULL) == sizeof(uint) * 2, "(ull) != (uint|uint) - BAD PLATFORM REALIZATION");//todo:: add constexpr if maybe
 
+    ULL BEFORE_ONE = left >> halfULLBits; // get first 32 bits
+    ULL AFTER__ONE = (left << halfULLBits) >> halfULLBits; // get second 32 bits
+    ULL BEFORE_TWO = right >> halfULLBits;
+    ULL AFTER__TWO = (right << halfULLBits) >> halfULLBits;
+
+    ULL answer = 0;
+    if (int shift = halfULLBits * 2 - to_shift; shift > 0)
+         answer += (BEFORE_ONE * BEFORE_TWO) << (shift);
+    else answer += (BEFORE_ONE * BEFORE_TWO) >> (-shift);
+
+    if (int shift = halfULLBits - to_shift; shift > 0)
+         answer += (BEFORE_ONE * AFTER__TWO) << (shift);
+    else answer += (BEFORE_ONE * AFTER__TWO) >> (-shift);
+
+    if (int shift = halfULLBits - to_shift; shift > 0)
+         answer += (AFTER__ONE * BEFORE_TWO) << (shift);
+    else answer += (AFTER__ONE * BEFORE_TWO) >> (-shift);
+
+    if (to_shift > 0)
+         answer += (AFTER__ONE * AFTER__TWO) >> (to_shift);
+    else answer += (AFTER__ONE * AFTER__TWO) << (-to_shift);
+    return answer;
+
+}
 
 template<std::size_t N>
 bool operator<(const std::bitset<N>& _base, const std::bitset<N>& y)
@@ -126,20 +156,13 @@ bool operator>(const std::bitset<N>& _base, const std::bitset<N>& y)
     return false;
 }
 
-
-
-
-
-
-
-
-
 template<std::size_t N> //for bitset
 bool to_bool(const std::bitset<N>& _base)
 {
     return _base.any();
 
 }
+
 template<typename T> //for integers
 bool to_bool(T const& b)
 {

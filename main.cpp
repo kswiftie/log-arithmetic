@@ -142,7 +142,7 @@ int test4()
 int complex_test()
 {
 
-	using comple = std::complex<FixedPoint<64,32>>;
+	using comple = std::complex<FixedPoint<31,32>>;
 	double i_real = 1.3;
 	double i_image = 1.5;
 	double j_real = 1.;
@@ -158,16 +158,23 @@ int complex_test()
 
 int main()
 {
-	//test4();
+	test4();
+	complex_test();
 	auto f1 = 11.5234;
-	auto f2 = 4.3234;
-	FixedPoint<120, 50> i = f1;
+	auto f2 = 0;
+	FixedPoint<60, 40> i = f1;
 	decltype(i) j = f2;
-	std::cout << i << " * " << j << " = " << i * j << std::endl;
-	FixedPoint<10, 55> i2 = f1;
+	std::cout << i << " / " << j << " = " << i / j << std::endl;
+	FixedPoint<20, 40> i2 = f1;
 	decltype(i) j2 = f2;
-	std::cout << i2 << " * " << j2 << " = " << i2 * j2 << std::endl;
+	std::cout << i2 << " / " << j2 << " = " << i2 / j2 << std::endl;
 	std::cout << f1 << " * " << f2 << " = " << f1 * f2 << std::endl;
+	std::cout << i2 << " *= " << j2 << " => " << (i2*=j2) << std::endl;
+
+
+	FixedPoint<500, 500> test_for_to_ULL = 123;
+	std::cout << "test_in_base: " << test_for_to_ULL << std::endl;
+	std::cout << "test_to_int: " << test_for_to_ULL << std::endl; 
 	//std::cout << i.get_base() << std::endl;
 	//std::cout << j.get_base() << std::endl;
 	//std::cout << (i * j).get_base() << std::endl;
