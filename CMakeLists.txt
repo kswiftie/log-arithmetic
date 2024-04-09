@@ -12,7 +12,7 @@ endif()
 project ("LogBaseNumeration")
 
 # Добавьте источник в исполняемый файл этого проекта.
-add_executable (LogBaseNumeration "include/lns.h" "main.cpp" "include/bitsetExtended.h")
+add_executable (LogBaseNumeration "include/lns.h" "main.cpp" "include/bitsetExtended.h" "include/constexprMath.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET LogBaseNumeration PROPERTY CXX_STANDARD 23)

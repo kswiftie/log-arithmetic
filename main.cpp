@@ -156,7 +156,7 @@ int complex_test()
 	return 0;
 }
 
-int main()
+int test5()
 {
 	test4();
 	complex_test();
@@ -178,5 +178,54 @@ int main()
 	//std::cout << i.get_base() << std::endl;
 	//std::cout << j.get_base() << std::endl;
 	//std::cout << (i * j).get_base() << std::endl;
+	return 0;
+}
+
+
+
+
+
+
+int test6()
+{
+	//test5();
+	constexpr int t = 10;
+	constexpr FixedPoint<4, 32> num { t };
+	//constexpr auto ans = log2(num);
+	FixedPoint ans1 = num / num;
+	constexpr bitset<64> p1 = 300;
+	constexpr bitset<64> p2 = 500;
+	//constexpr bitset<64> v1 = p1 / p2;
+	constexpr auto ans333 = top_bit_set(p1);
+	auto answerrrr = log(num);
+	//std::cout << v1.to_ullong() << std::endl;
+	std::cout << answerrrr << " " << log(t) << std::endl;
+	double last = 1;
+	using F = FixedPoint<64, 64>;
+	std::cout << "exp_test: " << pow((F)2.532, (F)1.234) << std::endl;
+	std::cout << "exp_test: " << pow(2.532, 1.234) << std::endl;
+
+	std::cout << "exp_test: " << pow((F)2, log2((F)75.234)) << std::endl;//it's work!!!!!!!!!!!!
+
+	std::cout << "exp_test: " << exp(1.234) << std::endl;
+	//for (int i = 0; i < 100; i++)
+	//{
+	//	std::cout << how_sign_for(0, i) << std::endl;
+	//}
+	//for (int i = 4; i < 1000; i+=2)
+	//{
+	//	double dif = log(t) - log_e(t, i);
+	//	std::cout << "elem: " << (i-3)/2 + 2 << " result: " << log(t) - log_e(t, i)  << "better x times: " << last / dif << std::endl;
+	//	last = dif;
+	//
+	//}
+	return 0;
+}
+
+int main()
+{
+	using F = FixedPoint<15, 40>;
+	for (int i = 0; i<10000; i+=100)
+		std::cout << "exp_test: " << exp(log((F)i)) << " =-= " << exp(log(i)) << std::endl;
 	return 0;
 }
