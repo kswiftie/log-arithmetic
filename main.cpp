@@ -224,8 +224,17 @@ int test6()
 
 int main()
 {
-	using F = FixedPoint<15, 40>;
-	for (int i = 0; i<10000; i+=100)
-		std::cout << "exp_test: " << exp(log((F)i)) << " =-= " << exp(log(i)) << std::endl;
+	//test for accuracy
+	using F = FixedPoint<16, 16>;
+	std::cout << log(pow(exp(F(1)), F(2))) << std::endl;
+	std::cout << exp(log(F(500.f))) << std::endl;
+	std::cout << log(pow(exp(F(-1)), F(-1))) << std::endl;
+	std::cout << log(pow(exp(F(-1)), F(-1))) << std::endl;
+	std::cout << exp(F(4)) << std::endl;
+	std::cout << exp(4) << std::endl;
+	for (float i = 0; i < 100; i += abs(i)/ 20 + 0.1)
+	{
+		std::cout << exp(log(F(i))) << " == " << exp(log(i)) << std::endl;
+	}
 	return 0;
 }

@@ -10,8 +10,8 @@ if (POLICY CMP0141)
 endif()
 
 project ("LogBaseNumeration")
-
 # Добавьте источник в исполняемый файл этого проекта.
+# add_compile_options(/constexpr:steps10000000)
 add_executable (LogBaseNumeration "include/lns.h" "main.cpp" "include/bitsetExtended.h" "include/constexprMath.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

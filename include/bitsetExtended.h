@@ -2,49 +2,101 @@
 #define _BITSETEXTENDED_
 #include <bitset>
 #include <iostream>
+
+template<size_t N> constexpr unsigned long long noexcept_to_ullong(const std::bitset<N>& _Right) {
+    if constexpr (N <= 64)
+    {
+        return _Right;
+    }
+    else
+    {
+        return ((_Right << (N - 64)) >> (N - 64)).to_ullong();
+    }
+}
+
+constexpr unsigned long long noexcept_to_ullong(const unsigned long long& _Right) {
+    return _Right;
+}
+
+
 template<size_t N> constexpr int top_bit_set(const std::bitset<N>& a) {
-    int i;
-    for (i = N - 1; i >= 0; i--)
+    int i = N - 1;
+    for (; i >= 0; i--)
         if (a.test(i)) break;
     return i;
 }
+
+constexpr int top_bit_set(unsigned long long a) {
+    int i = 0;
+    constexpr auto helper = (unsigned long long)1 << 63;
+    for (i = 63; i >= 0; i-=1) {
+        if (a & helper) break;
+        a = a << 1;
+    }
+    return i;
+}
+
+
+
+
+template<std::size_t N>
+constexpr bool operator<(const std::bitset<N>& _base, const std::bitset<N>& y) {
+    for (int i = N - 1; i >= 0; i--) {
+        if (_base[i] ^ y[i]) return y[i];
+    }
+    return false;
+}
+
+template<std::size_t N>
+constexpr bool operator>(const std::bitset<N>& _base, const std::bitset<N>& y) {
+    for (int i = N - 1; i >= 0; i--) {
+        if (_base[i] ^ y[i]) return _base[i];
+    }
+    return false;
+}
+
+template<std::size_t N>
+constexpr bool operator<=(const std::bitset<N>& _base, const std::bitset<N>& y) {
+    for (int i = N - 1; i >= 0; i--) {
+        if (_base[i] ^ y[i]) return y[i];
+    }
+    return true;
+}
+
+template<std::size_t N>
+constexpr bool operator>=(const std::bitset<N>& _base, const std::bitset<N>& y) {
+    for (int i = N - 1; i >= 0; i--) {
+        if (_base[i] ^ y[i]) return _base[i];
+    }
+    return true;
+}
+
+
+
 
 template <std::size_t N>
 constexpr std::bitset<N> operator+(const std::bitset<N>& b1, const std::bitset<N>& b2) {
     std::bitset<N> result;
     char carry = 0;
     for (std::size_t i = 0; i < N; ++i) {
-        // упрощенное от (b1 | b2 | carry) & (!carry | (b1 & b2 & carry))
         result[i] = (b1[i] ^ b2[i]) ^ carry;
         carry = (b1[i] & b2[i]) | ((b1[i] ^ b2[i]) & carry);
     }
-    //if (carry) {
-        //result.set();
-      // тут еще можно на overflow проверить
-      //std::cout << "Warning: Operation overflow." << std::endl;
-    //}
     return result;
 }
 
 template <std::size_t N>
 constexpr std::bitset<N>& operator+=(std::bitset<N>& b1, const std::bitset<N>& b2) {
     b1 = b1 + b2;
-    return b1; //todo: chenge it to faster
+    return b1;
 }
 
 template <std::size_t N>
-constexpr std::bitset<N>& operator-=(std::bitset<N>& b1, const std::bitset<N>& b2) {
-    b1 = b1 - b2;
-    return b1; //todo: chenge it to faster
-}
-
-template <std::size_t N>
-constexpr std::bitset<N> operator-(const std::bitset<N>& b1, const std::bitset<N>& b2) { 
+constexpr std::bitset<N> operator-(const std::bitset<N>& b1, const std::bitset<N>& b2) {
     std::bitset<N> result(0);
     char borrow = 0;
     bool diff = 0;
     for (std::size_t i = 0; i < N; ++i) {
-        // упрощенное от (b1 | b2 | carry) & (!carry | (b1 & b2 & carry))
         if (borrow) {
             diff = !(b1[i] ^ b2[i]);
             borrow = !b1[i] || (b1[i] && b2[i]);
@@ -53,9 +105,15 @@ constexpr std::bitset<N> operator-(const std::bitset<N>& b1, const std::bitset<N
             diff = b1[i] ^ b2[i];
             borrow = !b1[i] && b2[i];
         }
-        result[i] = diff;//it is breake constexpr
+        result[i] = diff;
     }
     return result;
+}
+
+template <std::size_t N>
+constexpr std::bitset<N>& operator-=(std::bitset<N>& b1, const std::bitset<N>& b2) {
+    b1 = b1 - b2;
+    return b1;
 }
 
 
@@ -83,7 +141,7 @@ constexpr std::bitset<N> operator/(const std::bitset<N>& dividend, const std::bi
 }
 
 template<size_t N>
-inline constexpr std::bitset<N> operator*(const std::bitset<N>& first, const std::bitset<N>& second) {
+constexpr std::bitset<N> operator*(const std::bitset<N>& first, const std::bitset<N>& second) {
     std::bitset<N> answer(0);
     int second_size = top_bit_set(second);
     for (int iter = 0; iter <= second_size; iter++)
@@ -94,7 +152,7 @@ inline constexpr std::bitset<N> operator*(const std::bitset<N>& first, const std
 }
 
 template<size_t N>
-inline constexpr std::bitset<N> mul_vith_shift_right(const std::bitset<N>& first, const std::bitset<N>& second, const int to_shift) {
+constexpr std::bitset<N> mul_vith_shift_right(const std::bitset<N>& first, const std::bitset<N>& second, const int to_shift) {
     std::bitset<N> answer(0);
     int second_size = top_bit_set(second);
     for (int iter = 0; iter <= second_size; iter++)
@@ -107,8 +165,7 @@ inline constexpr std::bitset<N> mul_vith_shift_right(const std::bitset<N>& first
     return answer;
 }
 
-inline constexpr unsigned long long mul_vith_shift_right(const unsigned long long left, const unsigned long long right, const int to_shift)
-{
+constexpr unsigned long long mul_vith_shift_right(const unsigned long long left, const unsigned long long right, const int to_shift) {
     using ULL = unsigned long long;
     constexpr int halfULLBits = sizeof(ULL) * 4;
     ULL BEFORE_ONE = left >> halfULLBits; // get first 32 bits
@@ -141,34 +198,15 @@ inline constexpr unsigned long long mul_vith_shift_right(const unsigned long lon
 }
 
 
-template<std::size_t N>
-inline constexpr bool operator<(const std::bitset<N>& _base, const std::bitset<N>& y)
-{
-    for (int i = N - 1; i >= 0; i--) {
-         if (_base[i] ^ y[i]) return y[i];
-    }
-    return false;
-}
 
-template<std::size_t N>
-constexpr bool operator>(const std::bitset<N>& _base, const std::bitset<N>& y)
-{
-    for (int i = N - 1; i >= 0; i--) {
-        if (_base[i] ^ y[i]) return _base[i];
-    }
-    return false;
-}
 
 template<std::size_t N> //for bitset
-constexpr bool to_bool(const std::bitset<N>& _base)
-{
+constexpr bool to_bool(const std::bitset<N>& _base) {
     return _base.any();
-
 }
 
 template<typename T> //for integers
-constexpr bool to_bool(T const& b)
-{
+constexpr bool to_bool(T const& b) {
     return (bool)b;
 }
 
