@@ -68,19 +68,19 @@ constexpr size_t how_sign_for_exp_m(size_t after_bits)
 #define INT_BIT_NUMBERS         32
 #define OUTPUT_BY_BITS          false
 
-typedef unsigned long long ULL;
-#define ULL_BITS ((int)(sizeof(ULL) * 8))
-
 
 template<std::size_t BEFORE_DECIMAL_BITS = INT_BIT_NUMBERS, std::size_t AFTER_DECIMAL_BITS = DECIMAL_BIT_NUMBERS>
 class FixedPoint {
 protected:
+
     constexpr static int _howBits = BEFORE_DECIMAL_BITS + AFTER_DECIMAL_BITS;
 
 public:
     //bitset is so slow, so if you want to use big nombers, you'll pay "twice".
     typedef std::conditional<(_howBits <= ULL_BITS), ULL, bitset<_howBits>>::type BASE_TYPE;
+
 protected:
+
     BASE_TYPE _base = 0;
 
     bool _isPositive = true;
@@ -94,8 +94,8 @@ public:
         return returnBITSET;
     }
 
-    constexpr bool        get_isPositive()    const { return _isPositive; }
-    constexpr const auto& get_base()       const { return _base; }
+    constexpr bool        get_isPositive()    const noexcept { return _isPositive; }
+    constexpr const auto& get_base()       const noexcept { return _base; }
 
     //--init operators--
     FixedPoint() = default;
@@ -141,12 +141,12 @@ public:
 
     template<std::size_t BEFORE, std::size_t DECIMAL> requires (BEFORE != BEFORE_DECIMAL_BITS || DECIMAL != AFTER_DECIMAL_BITS)
     constexpr FixedPoint(const FixedPoint<BEFORE, DECIMAL>& other) {
+        constexpr int difference_decimal = (int)AFTER_DECIMAL_BITS - (int)DECIMAL;
+        constexpr int difference_before = (int)BEFORE_DECIMAL_BITS - (int)BEFORE;
+        constexpr unsigned int start_in_old = (difference_decimal > 0 ? 0 : -difference_decimal);
+        constexpr unsigned int start_in_new = (difference_decimal > 0 ? difference_decimal : 0);
+        constexpr int how_to_set = (difference_decimal > 0 ? DECIMAL : AFTER_DECIMAL_BITS) + (difference_before > 0 ? BEFORE : BEFORE_DECIMAL_BITS);
         this->_isPositive = other.get_isPositive();
-        const int difference_decimal = AFTER_DECIMAL_BITS - DECIMAL;
-        const int difference_before = BEFORE_DECIMAL_BITS - BEFORE;
-        const unsigned int start_in_old = (difference_decimal > 0 ? 0 : -difference_decimal);
-        const unsigned int start_in_new = (difference_decimal > 0 ? difference_decimal : 0);
-        const int how_to_set = (difference_decimal > 0 ? DECIMAL : AFTER_DECIMAL_BITS) + (difference_before > 0 ? BEFORE : BEFORE_DECIMAL_BITS);
         if constexpr (!is_integral<BASE_TYPE>::value) {
             if constexpr (!is_integral<FixedPoint<BEFORE, DECIMAL>::BASE_TYPE>::value) {
                 for (int i = 0, iter_in_old = start_in_old, iter_in_new = start_in_new; i < how_to_set; i++, iter_in_old++, iter_in_new++)
@@ -174,152 +174,141 @@ public:
     }
 
     //--arithmetic operators--
-    constexpr FixedPoint operator+(const FixedPoint& other) const {
-        if (this->_isPositive == other._isPositive)
-            return this->MakeFixed(this->_base + other._base, this->_isPositive);
-        else if (this->_base > other._base)
-            return this->MakeFixed(this->_base - other._base, this->_isPositive);
+    constexpr FixedPoint operator+(const FixedPoint& _Right) const {
+        if (this->_isPositive == _Right._isPositive)
+            return this->MakeFixed(this->_base + _Right._base, this->_isPositive);
+        else if (this->_base > _Right._base)
+            return this->MakeFixed(this->_base - _Right._base, this->_isPositive);
         else
-            return this->MakeFixed(other._base - this->_base, other._isPositive);
+            return this->MakeFixed(_Right._base - this->_base, _Right._isPositive);
     }
 
-    constexpr FixedPoint operator-(const FixedPoint& other) const {
-        if (this->_isPositive != other._isPositive)
-            return this->MakeFixed(this->_base + other._base, this->_isPositive);
-        else if (this->_base > other._base)
-            return this->MakeFixed(this->_base - other._base, this->_isPositive);
+    constexpr FixedPoint operator-(const FixedPoint& _Right) const {
+        if (this->_isPositive != _Right._isPositive)
+            return this->MakeFixed(this->_base + _Right._base, this->_isPositive);
+        else if (this->_base > _Right._base)
+            return this->MakeFixed(this->_base - _Right._base, this->_isPositive);
         else
-            return this->MakeFixed(other._base - this->_base, not this->_isPositive);
+            return this->MakeFixed(_Right._base - this->_base, not this->_isPositive);
     }
 
-    constexpr FixedPoint& operator+=(const FixedPoint& other) {
-        if (this->_isPositive == other._isPositive)
-        {
-            this->_base += other._base;
+    constexpr FixedPoint& operator+=(const FixedPoint& _Right) {
+        if (this->_isPositive == _Right._isPositive) {
+            this->_base += _Right._base;
         }
-        else if (this->_base > other._base)
-        {
-            this->_base -= other._base;
+        else if (this->_base > _Right._base) {
+            this->_base -= _Right._base;
         }
-        else
-        {
-            this->_base = other._base - this->_base;
-            this->_isPositive = other._isPositive;
+        else {
+            this->_base = _Right._base - this->_base;
+            this->_isPositive = _Right._isPositive;
         }
         return *this;
     }
 
-    constexpr FixedPoint& operator-=(const FixedPoint& other) {
-        if (this->_isPositive != other._isPositive)
-        {
-            this->_base += other._base;
+    constexpr FixedPoint& operator-=(const FixedPoint& _Right) {
+        if (this->_isPositive != _Right._isPositive) {
+            this->_base += _Right._base;
         }
-        else if (this->_base > other._base)
-        {
-            this->_base -= other._base;
+        else if (this->_base > _Right._base) {
+            this->_base -= _Right._base;
         }
-        else
-        {
-            this->_base = other._base - this->_base;
+        else {
+            this->_base = _Right._base - this->_base;
             this->_isPositive = not this->_isPositive;
         }
         return *this;
     }
 
-    constexpr FixedPoint operator*(const FixedPoint& other) const {
-        return MakeFixed(mul_vith_shift_right(this->_base, other._base, AFTER_DECIMAL_BITS), this->_isPositive == other._isPositive);
+    constexpr FixedPoint operator*(const FixedPoint& _Right) const {
+        return MakeFixed(mul_vith_shift_right(this->_base, _Right._base, AFTER_DECIMAL_BITS), this->_isPositive == _Right._isPositive);
     }
 
-    constexpr FixedPoint operator/(const FixedPoint& other) const {
-        bool new_isPositive = this->_isPositive == other._isPositive;
+    constexpr FixedPoint operator/(const FixedPoint& _Right) const {
+        bool new_isPositive = this->_isPositive == _Right._isPositive;
         if constexpr (std::is_integral_v<BASE_TYPE>) // checking for zero!!
         {
-            if (not (bool)other._base)
+            if (not (bool)_Right._base)
                 return this->MakeFixed(ULLONG_MAX, new_isPositive); //return maximum number base!
         }
         else
         {
-            if (other._base.none())
+            if (_Right._base.none())
                 return this->MakeFixed(BASE_TYPE().set(), new_isPositive); //max base!
         }
-        
-        using extended = FixedPoint<_howBits, AFTER_DECIMAL_BITS>;
-        auto newBase = (extended(*this).get_base() << AFTER_DECIMAL_BITS) / (extended(other).get_base());
-        return extended().MakeFixed(newBase, new_isPositive);
-        //using extended = FixedPoint<_howBits, AFTER_DECIMAL_BITS>;
-        //auto newBase = ((*this).get_base() << AFTER_DECIMAL_BITS) / (other.get_base());
-        //return MakeFixed(newBase, new_isPositive);
+        auto newBase = div_vith_shift_left((*this).get_base(), _Right.get_base(), AFTER_DECIMAL_BITS);
+        return MakeFixed(newBase, new_isPositive);
     }
 
-    constexpr FixedPoint& operator*=(const FixedPoint& other) {
-        this->_base = mul_vith_shift_right(this->get_base(), other.get_base(), AFTER_DECIMAL_BITS);
-        this->_isPositive = (this->_isPositive == other._isPositive);
+    constexpr FixedPoint& operator*=(const FixedPoint& _Right) {
+        this->_base = mul_vith_shift_right(this->get_base(), _Right.get_base(), AFTER_DECIMAL_BITS);
+        this->_isPositive = (this->_isPositive == _Right._isPositive);
         return *this;
     }
 
-    constexpr FixedPoint& operator/=(const FixedPoint& other) {
-        *this = *this / other;
+    constexpr FixedPoint& operator/=(const FixedPoint& _Right) {
+        *this = *this / _Right;
         return *this;
     }
 
-    constexpr FixedPoint operator<< (const size_t To_shift) const {
-        return MakeFixed(this->_base << To_shift, this->_isPositive);
+    constexpr FixedPoint operator<< (const size_t _Right) const {
+        return MakeFixed(this->_base << _Right, this->_isPositive);
     }
 
-    constexpr FixedPoint operator>> (const size_t To_shift) const {
-        return MakeFixed(this->_base >> To_shift, this->_isPositive);
+    constexpr FixedPoint operator>> (const size_t _Right) const {
+        return MakeFixed(this->_base >> _Right, this->_isPositive);
     }
 
-    constexpr FixedPoint& operator<<= (const size_t To_shift) {
-        this->_base <<= To_shift;
+    constexpr FixedPoint& operator<<= (const size_t _Right) {
+        this->_base <<= _Right;
         return *this;
     }
 
-    constexpr FixedPoint& operator>>= (const size_t To_shift) {
-        this->_base >>= To_shift;
+    constexpr FixedPoint& operator>>= (const size_t _Right) {
+        this->_base >>= _Right;
         return *this;
     }
 
     //--compare operators--
-    constexpr bool operator==(const FixedPoint& other) const {
-        if (this->_base == other._base){
-            if (this->_isPositive == other._isPositive) return true;
+    constexpr bool operator==(const FixedPoint& _Right) const {
+        if (this->_base == _Right._base){
+            if (this->_isPositive == _Right._isPositive) return true;
             if (not to_bool(this->_base)) return true; // -00000000,000000 == +00000000,000000 -> true
         }
         return false;
     }
 
-    constexpr bool operator!=(const FixedPoint& other) const {
-        if (this->_base == other._base) {
-            if (this->_isPositive == other._isPositive) return false;
+    constexpr bool operator!=(const FixedPoint& _Right) const {
+        if (this->_base == _Right._base) {
+            if (this->_isPositive == _Right._isPositive) return false;
             if (not to_bool(this->_base)) return false; // -00000000,000000 != +00000000,000000 -> false
         }
         return true;
     }
 
-    constexpr bool operator<(const FixedPoint& other) const {
-        FixedPoint diff = other - *this;
+    constexpr bool operator<(const FixedPoint& _Right) const {
+        FixedPoint diff = _Right - *this;
         if (diff._isPositive and to_bool(diff._base))
             return true;
         return false;
     }
 
-    constexpr bool operator>(const FixedPoint& other) const {
-        FixedPoint diff = *this - other;
+    constexpr bool operator>(const FixedPoint& _Right) const {
+        FixedPoint diff = *this - _Right;
         if (diff._isPositive and to_bool(diff._base))
             return true;
         return false;
     }
 
-    constexpr bool operator>=(const FixedPoint& other) const {
-        FixedPoint diff = *this - other;
+    constexpr bool operator>=(const FixedPoint& _Right) const {
+        FixedPoint diff = *this - _Right;
         if (diff._isPositive or (not to_bool(diff._base)))
             return true;
         return false;
     }
 
-    constexpr bool operator<=(const FixedPoint& other) const {
-        FixedPoint diff = other - *this;
+    constexpr bool operator<=(const FixedPoint& _Right) const {
+        FixedPoint diff = _Right - *this;
         if (diff._isPositive or (not to_bool(diff._base)))
             return true;
         return false;
@@ -364,42 +353,35 @@ public:
     template<typename TO_TYPE> requires(std::is_integral_v<TO_TYPE>)
     operator TO_TYPE() const
     {
-        if constexpr (std::is_integral_v<BASE_TYPE>)
-        {
+        if constexpr (std::is_integral_v<BASE_TYPE>) {
             if (_isPositive)
                 return (_base >> AFTER_DECIMAL_BITS);
             return -(_base >> AFTER_DECIMAL_BITS);
         }
-        else
-        {
+        else {
             // __V_____we use this if because if there are any set before 64 bits, then to_ullong() -> error.
-            if constexpr (BEFORE_DECIMAL_BITS < ULL_BITS)
-            {
+            if constexpr (BEFORE_DECIMAL_BITS < ULL_BITS) {
                 if (_isPositive)
                     return (_base >> AFTER_DECIMAL_BITS).to_ullong();
                 return -(_base >> AFTER_DECIMAL_BITS).to_ullong();
             }
-            else
-            {//cutting off the hiest bits for predict error.
+            else {//cutting off the hiest bits for predict error.
                 if (_isPositive)
                     return (_base << (BEFORE_DECIMAL_BITS - ULL_BITS) >> (_howBits - ULL_BITS)).to_ullong();
                 return -(_base << (BEFORE_DECIMAL_BITS - ULL_BITS) >> (_howBits - ULL_BITS)).to_ullong();
-            }//actually if TO_TYPE is signed then return value can be less then 0. as i understand it's okay.
+            }//actually if TO_TYPE is signed then return value can be less then 0. As i understand it's okay.
         }
     }
 
     template<typename TO_TYPE> requires(std::is_floating_point_v<TO_TYPE>)
-    operator TO_TYPE() const
-    {
+    operator TO_TYPE() const {
         constexpr double to_int_mul = 1. / fixedMath::constexpr_pow(2., AFTER_DECIMAL_BITS);
-        if constexpr (std::is_integral_v<BASE_TYPE>)
-        {
+        if constexpr (std::is_integral_v<BASE_TYPE>) {
             if (_isPositive)
                 return TO_TYPE(_base) * to_int_mul;
             return -TO_TYPE(_base) * to_int_mul;
         }
-        else
-        {
+        else {
             int iter = 0;
             while (_base[_howBits - 1 - iter] == 0 and iter < _howBits - 1) iter++;
             if (_base[_howBits - 1 - iter] == 0) return 0;
@@ -415,21 +397,21 @@ public:
         }
     }
 
-    operator std::string() const
-    {
+    operator std::string() const {
         constexpr double to_int_mul = 1. / fixedMath::constexpr_pow(2., AFTER_DECIMAL_BITS);
-        if constexpr (std::is_integral_v<BASE_TYPE>)
-        { // if it's is int
+        if constexpr (std::is_integral_v<BASE_TYPE>) { // if it's is int
+
             return (_isPositive ? ""s : "-"s) + std::to_string(_base * to_int_mul);
         }
-        else
-        {
+        else {
             return std::to_string(double(*this)); //TODO:::: it's bad because double is not enough for seeing all bits!!!!
         }
     }
 
     //--special functions--
+private: 
 
+    // log with good accuracy for elem in [1, 2] (member function
     constexpr FixedPoint log_for_short_m() const
     {
         using F = FixedPoint<BEFORE_DECIMAL_BITS, AFTER_DECIMAL_BITS>;
@@ -457,24 +439,20 @@ public:
         constexpr F one_div_two = (one >> size_t(1));
         constexpr int iteration = AFTER_DECIMAL_BITS / 3;
 
-        F log_2 = two.log_for_short_m();
-        if (*this <= 0) return *this; // without exception
+        if (*this <= 0) return *this;
         int shifted = 0;
         F to_solvePart = *this;
 
+        shifted = (int)top_bit_set(this->_base) - (int)AFTER_DECIMAL_BITS;
+        if (shifted >= 1)
+            to_solvePart >>= (shifted);
+        else if (shifted <= -1)
+            to_solvePart <<= (-shifted);
+        //while (to_solvePart >= two) { to_solvePart >>= size_t(1); shifted++; }//todo: change it!!!!! it's cost a lot!!!! we just need to shift the base! but we make new fixed many times!
+        //while (to_solvePart <= one_div_two) { to_solvePart <<= size_t(1); shifted--; }//todo: change it!!!!!
 
-
-
-        while (to_solvePart >= two) { to_solvePart >>= size_t(1); shifted++; }//todo: change it!!!!! it's cost a lot!!!! we just need to shift the base! but we make new fixed many times!
-        while (to_solvePart <= one_div_two) { to_solvePart <<= size_t(1); shifted--; }//todo: change it!!!!!
-        F k = one - two / (to_solvePart + one);
-        F p = k * k;
-        F cur_p = one;
-        F compare = two * k;
-        F answer = compare;
-        for (int i = 3, iter = 1; iter < iteration; i += 2, iter++)
-            answer += (compare / F(i) * (cur_p *= p));
-        return answer + log_2 * F(shifted);
+        F log_2 = two.log_for_short_m();
+        return to_solvePart.log_for_short_m() + log_2 * F(shifted);
 
     }
 
@@ -482,7 +460,6 @@ public:
         using F = FixedPoint<BEFORE_DECIMAL_BITS, AFTER_DECIMAL_BITS>;
         constexpr size_t accuracy = how_sign_for_exp_m(AFTER_DECIMAL_BITS);
         constexpr F one = 1;
-        //todo: add constexpr arr of elements : 1, 1/2, 1/3, 1/4 and so on
         F answer = 1;
         for (size_t i = accuracy - 1; i > 0; i--)
         {
@@ -506,7 +483,6 @@ public:
         else {
             shifted = 0;
         }
-        //while (to_solvePart.get_base() >= two.get_base()) { to_solvePart *= one_div_two; shifted++; }
         F answer = to_solvePart.exp_for_short_m();
         if (shifted > 0) {
             for (int i = 0; i < shifted; i++) {
@@ -516,18 +492,15 @@ public:
         return answer;
     }
 
+public:
     friend constexpr FixedPoint log2(const FixedPoint& other) {
-        using extended = FixedPoint<BEFORE_DECIMAL_BITS, AFTER_DECIMAL_BITS + BEFORE_DECIMAL_BITS + 4>;
-
-        extended log_2 = extended(2).log_m();//todo: make it constexpr
-        return ((extended)other).log_m() / log_2;
-        //return other.log_m() / FixedPoint(2).log_m();
+        constexpr auto two = FixedPoint(2);
+        auto log_2 = two.log_for_short_m();
+        return other.log_m() / log_2;
     }
 
     friend constexpr FixedPoint log(const FixedPoint& other) {
-        using extended = FixedPoint<BEFORE_DECIMAL_BITS, AFTER_DECIMAL_BITS + BEFORE_DECIMAL_BITS + 4>; //when we add numbers we can lost sum of some last bits
-        return ((extended)other).log_m();
-        //return other.log_m();
+        return other.log_m();
     }
 
     friend constexpr FixedPoint exp(const FixedPoint& other) {

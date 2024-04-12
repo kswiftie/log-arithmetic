@@ -188,7 +188,7 @@ int test5()
 
 int test6()
 {
-	//test5();
+	test5();
 	constexpr int t = 10;
 	constexpr FixedPoint<4, 32> num { t };
 	//constexpr auto ans = log2(num);
@@ -224,17 +224,38 @@ int test6()
 
 int main()
 {
-	//test for accuracy
-	using F = FixedPoint<16, 16>;
+	test6();
+	using F = FixedPoint<14, 50>;
 	std::cout << log(pow(exp(F(1)), F(2))) << std::endl;
 	std::cout << exp(log(F(500.f))) << std::endl;
 	std::cout << log(pow(exp(F(-1)), F(-1))) << std::endl;
 	std::cout << log(pow(exp(F(-1)), F(-1))) << std::endl;
 	std::cout << exp(F(4)) << std::endl;
 	std::cout << exp(4) << std::endl;
-	for (float i = 0; i < 100; i += abs(i)/ 20 + 0.1)
+	for (double i = 0; i < 40; i += 1.234)// += abs(i) / 20 + 0.1)
 	{
-		std::cout << exp(log(F(i))) << " == " << exp(log(i)) << std::endl;
+		std::cout << exp(log(F(i))) << " == " << F(i) << std::endl;
 	}
+	
+	for (double i = 0; i < 1; i += 0.234)// += abs(i) / 20 + 0.1)
+	{
+		std::cout << pow((F)2, log2((F)i)) << " == " << (F)i << std::endl;
+	}
+	
+
+
+	//bitset<64> i = 9;
+	//bitset<64> j = 10;
+	//bitset<64> k = div_vith_shift_left(i, j, 30);
+	//std::cout << i << std::endl;
+	//std::cout << j << std::endl;
+	//std::cout << k.to_ullong() << std::endl << std::endl;
+	//
+	//constexpr ULL ii = 9;
+	//constexpr ULL jj = 10;
+	//constexpr ULL kk = div_vith_shift_left(ii, jj, 30);
+	//
+	//std::cout << bitset<64>(kk) << std::endl;
+	//std::cout << (kk) << std::endl;
 	return 0;
 }

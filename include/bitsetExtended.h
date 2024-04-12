@@ -3,70 +3,99 @@
 #include <bitset>
 #include <iostream>
 
-template<size_t N> constexpr unsigned long long noexcept_to_ullong(const std::bitset<N>& _Right) {
-    if constexpr (N <= 64)
-    {
+
+typedef unsigned long long ULL;
+#define ULL_BITS ((int)(sizeof(ULL) * 8))
+
+
+template<size_t N> constexpr ULL noexcept_to_ullong(const std::bitset<N>& _Right) noexcept {
+    if constexpr ((int)N <= ULL_BITS) {
         return _Right;
     }
-    else
-    {
-        return ((_Right << (N - 64)) >> (N - 64)).to_ullong();
+    else {
+        return ((_Right << (N - ULL_BITS)) >> (N - ULL_BITS)).to_ullong();
     }
 }
 
-constexpr unsigned long long noexcept_to_ullong(const unsigned long long& _Right) {
+constexpr ULL noexcept_to_ullong(const ULL& _Right) noexcept {
     return _Right;
 }
 
 
-template<size_t N> constexpr int top_bit_set(const std::bitset<N>& a) {
+template<size_t N> 
+constexpr int top_bit_set(const std::bitset<N>& _Base) noexcept {
     int i = N - 1;
     for (; i >= 0; i--)
-        if (a.test(i)) break;
-    return i;
+        if (_Base.test(i)) break;
+    return i; // return -1 if all zeros.
 }
 
-constexpr int top_bit_set(unsigned long long a) {
+constexpr int top_bit_set(ULL _Number) {
     int i = 0;
-    constexpr auto helper = (unsigned long long)1 << 63;
-    for (i = 63; i >= 0; i-=1) {
-        if (a & helper) break;
-        a = a << 1;
+    constexpr ULL helper = 1ULL << (ULL_BITS-1);
+    for (i = (ULL_BITS - 1); i >= 0; i-=1) {
+        if (_Number & helper) break;
+        _Number <<= 1;
     }
     return i;
 }
 
 
+//template<size_t N>
+//std::bitset<N> find_remainder(const std::bitset<N>& dividend, const std::bitset<N>& divisor) {
+//    std::bitset<N> helper = dividend;
+//    int divisor_size = top_bit_set(divisor);
+//    if (divisor_size < 0) return helper;
+//    int bit;
+//    while ((bit = top_bit_set(helper)) >= divisor_size) {
+//        helper ^= divisor << (bit - divisor_size);
+//    }
+//    return helper;
+//}
+//
+//
+//ULL find_remainder(const ULL& dividend, const ULL& divisor) {
+//    if (divisor > 0)
+//        return dividend;
+//    return dividend % divisor;
+//}
 
 
-template<std::size_t N>
-constexpr bool operator<(const std::bitset<N>& _base, const std::bitset<N>& y) {
+
+
+
+
+
+
+
+template<size_t N>
+constexpr bool operator<(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     for (int i = N - 1; i >= 0; i--) {
-        if (_base[i] ^ y[i]) return y[i];
+        if (_Left[i] ^ _Right[i]) return _Right[i];
     }
     return false;
 }
 
-template<std::size_t N>
-constexpr bool operator>(const std::bitset<N>& _base, const std::bitset<N>& y) {
+template<size_t N>
+constexpr bool operator>(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     for (int i = N - 1; i >= 0; i--) {
-        if (_base[i] ^ y[i]) return _base[i];
+        if (_Left[i] ^ _Right[i]) return _Left[i];
     }
     return false;
 }
 
-template<std::size_t N>
-constexpr bool operator<=(const std::bitset<N>& _base, const std::bitset<N>& y) {
+template<size_t N>
+constexpr bool operator<=(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     for (int i = N - 1; i >= 0; i--) {
-        if (_base[i] ^ y[i]) return y[i];
+        if (_Left[i] ^ _Right[i]) return _Right[i];
     }
     return true;
 }
 
-template<std::size_t N>
-constexpr bool operator>=(const std::bitset<N>& _base, const std::bitset<N>& y) {
+template<size_t N>
+constexpr bool operator>=(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     for (int i = N - 1; i >= 0; i--) {
-        if (_base[i] ^ y[i]) return _base[i];
+        if (_Left[i] ^ _Right[i]) return _Left[i];
     }
     return true;
 }
@@ -74,66 +103,63 @@ constexpr bool operator>=(const std::bitset<N>& _base, const std::bitset<N>& y) 
 
 
 
-template <std::size_t N>
-constexpr std::bitset<N> operator+(const std::bitset<N>& b1, const std::bitset<N>& b2) {
+template <size_t N>
+constexpr std::bitset<N> operator+(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     std::bitset<N> result;
     char carry = 0;
     for (std::size_t i = 0; i < N; ++i) {
-        result[i] = (b1[i] ^ b2[i]) ^ carry;
-        carry = (b1[i] & b2[i]) | ((b1[i] ^ b2[i]) & carry);
+        result[i] = (_Left[i] ^ _Right[i]) ^ carry;
+        carry = (_Left[i] & _Right[i]) | ((_Left[i] ^ _Right[i]) & carry);
     }
     return result;
 }
 
-template <std::size_t N>
-constexpr std::bitset<N>& operator+=(std::bitset<N>& b1, const std::bitset<N>& b2) {
-    b1 = b1 + b2;
-    return b1;
+template <size_t N>
+constexpr std::bitset<N>& operator+=(std::bitset<N>& _Left, const std::bitset<N>& _Right) {
+    _Left = _Left + _Right;
+    return _Left;
 }
 
-template <std::size_t N>
-constexpr std::bitset<N> operator-(const std::bitset<N>& b1, const std::bitset<N>& b2) {
+template <size_t N>
+constexpr std::bitset<N> operator-(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     std::bitset<N> result(0);
     char borrow = 0;
     bool diff = 0;
     for (std::size_t i = 0; i < N; ++i) {
         if (borrow) {
-            diff = !(b1[i] ^ b2[i]);
-            borrow = !b1[i] || (b1[i] && b2[i]);
+            diff = !(_Left[i] ^ _Right[i]);
+            borrow = !_Left[i] || (_Left[i] && _Right[i]);
         }
         else {
-            diff = b1[i] ^ b2[i];
-            borrow = !b1[i] && b2[i];
+            diff = _Left[i] ^ _Right[i];
+            borrow = !_Left[i] && _Right[i];
         }
         result[i] = diff;
     }
     return result;
 }
 
-template <std::size_t N>
-constexpr std::bitset<N>& operator-=(std::bitset<N>& b1, const std::bitset<N>& b2) {
-    b1 = b1 - b2;
-    return b1;
+template <size_t N>
+constexpr std::bitset<N>& operator-=(std::bitset<N>& _Left, const std::bitset<N>& _Right) {
+    _Left = _Left - _Right;
+    return _Left;
 }
 
 
+
 template<size_t N>
-constexpr std::bitset<N> operator/(const std::bitset<N>& dividend, const std::bitset<N>& divisor) {
+constexpr std::bitset<N> operator/(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     std::bitset<N> answer(0);
-    std::bitset<N> current_dividend = dividend;
-    int divisor_size = top_bit_set(divisor);
-    if (divisor_size < 0)
-    {
+    std::bitset<N> current_dividend = _Left;
+    int divisor_size = top_bit_set(_Right);
+    if (divisor_size < 0) {
         answer.set();
         return answer;
     }
-    int iter = top_bit_set(dividend) - divisor_size + 1;
-    
-    while ((--iter) >= 0)
-    {
-        if (!(current_dividend < (divisor << iter)))
-        {
-            current_dividend = current_dividend - (divisor << iter);
+    int iter = top_bit_set(_Left) - divisor_size + 1;
+    while ((--iter) >= 0) {
+        if (!(current_dividend < (_Right << iter))) {
+            current_dividend = current_dividend - (_Right << iter);
             answer.set(iter);
         }
     }
@@ -141,41 +167,40 @@ constexpr std::bitset<N> operator/(const std::bitset<N>& dividend, const std::bi
 }
 
 template<size_t N>
-constexpr std::bitset<N> operator*(const std::bitset<N>& first, const std::bitset<N>& second) {
+constexpr std::bitset<N> operator*(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     std::bitset<N> answer(0);
-    int second_size = top_bit_set(second);
-    for (int iter = 0; iter <= second_size; iter++)
-    {
-        if (second[iter]) answer += (first << iter);
+    int _Right_size = top_bit_set(_Right);
+    for (int iter = 0; iter <= _Right_size; iter++) {
+        if (_Right[iter]) answer += (_Left << iter);
     }
     return answer;
 }
 
+
 template<size_t N>
-constexpr std::bitset<N> mul_vith_shift_right(const std::bitset<N>& first, const std::bitset<N>& second, const int to_shift) {
+constexpr std::bitset<N> mul_vith_shift_right(const std::bitset<N>& _Left, const std::bitset<N>& second, const int _Right) {
     std::bitset<N> answer(0);
-    int second_size = top_bit_set(second);
-    for (int iter = 0; iter <= second_size; iter++)
+    int _Right_size = top_bit_set(second);
+    for (int iter = 0; iter <= _Right_size; iter++)
     {
         if (second[iter]){
-            if (iter - to_shift > 0)    answer += (first << (iter - to_shift));
-            else                        answer += (first >> (to_shift - iter));
+            if (iter - _Right > 0)    answer += (_Left << (iter - _Right));
+            else                      answer += (_Left >> (_Right - iter));
         }
     }
     return answer;
 }
 
-constexpr unsigned long long mul_vith_shift_right(const unsigned long long left, const unsigned long long right, const int to_shift) {
-    using ULL = unsigned long long;
+constexpr ULL mul_vith_shift_right(const ULL _Left, const ULL _Right, const int to_shift) {
     constexpr int halfULLBits = sizeof(ULL) * 4;
-    ULL BEFORE_ONE = left >> halfULLBits; // get first 32 bits
-    ULL AFTER__ONE = (left << halfULLBits) >> halfULLBits; // get second 32 bits
-    ULL BEFORE_TWO = right >> halfULLBits;
-    ULL AFTER__TWO = (right << halfULLBits) >> halfULLBits;
+    ULL BEFORE_ONE = _Left >> halfULLBits; // get first 32 bits
+    ULL AFTER__ONE = (_Left << halfULLBits) >> halfULLBits; // get second 32 bits
+    ULL BEFORE_TWO = _Right >> halfULLBits;
+    ULL AFTER__TWO = (_Right << halfULLBits) >> halfULLBits;
 
     ULL answer = 0;
-    if (to_shift > 0) //undefined behavior if shift not in [0, sizeof(ULL)). It's very surprising.!!!
-    {
+    //undefined behavior if shift not in [0, sizeof(ULL)). It's very surprising.!!!
+    if (to_shift > 0) {
         if (int shift = halfULLBits * 2 - to_shift; shift > 0)
             answer += (BEFORE_ONE * BEFORE_TWO) << (shift);
         else answer += (BEFORE_ONE * BEFORE_TWO) >> (-shift);
@@ -187,8 +212,7 @@ constexpr unsigned long long mul_vith_shift_right(const unsigned long long left,
     if (int shift = halfULLBits - to_shift; shift > 0)
         answer += (AFTER__ONE * BEFORE_TWO) << (shift);
     else answer += (AFTER__ONE * BEFORE_TWO) >> (-shift);
-    if (to_shift < 64) //undefined behavior predict.
-    {
+    if (to_shift < ULL_BITS) {//undefined behavior predict.
         if (to_shift > 0)
             answer += (AFTER__ONE * AFTER__TWO) >> (to_shift);
         else answer += (AFTER__ONE * AFTER__TWO) << (-to_shift);
@@ -198,16 +222,68 @@ constexpr unsigned long long mul_vith_shift_right(const unsigned long long left,
 }
 
 
+template<size_t N>
+constexpr std::bitset<N> div_vith_shift_left(const std::bitset<N>& _Left, const std::bitset<N>& _Right, const int to_shift) {
+    std::bitset<N> answer(0);
+    int top_Left_set = top_bit_set(_Left);
+    int top_Right_set = top_bit_set(_Right);
+
+    if (top_Right_set < 0) return answer.set();
+    if (top_Left_set < 0) return answer;
+
+    std::bitset<N> _Left_copy = ((_Left << ((int)N - top_Left_set - 1)) >> 1);
+    std::bitset<N> _Right_copy = ((_Right << ((int)N - top_Right_set - 1)) >> 1);
+
+    int iter = to_shift + top_Left_set - top_Right_set + 1;
+    while ((--iter) >= 0) {
+        if (_Left_copy >= _Right_copy) {
+            _Left_copy -= _Right_copy;
+            if (iter < (int)N)
+                answer.set(iter);
+        }
+        _Left_copy <<= 1;
+    }
+
+    return answer;
+
+}
+
+constexpr ULL div_vith_shift_left(const ULL _Left, const ULL _Right, const int to_shift) {
+    ULL answer(0);
+    int top_Left_set = top_bit_set(_Left);
+    int top_Right_set = top_bit_set(_Right);
+
+    if (top_Right_set < 0) return ULLONG_MAX;
+    if (top_Left_set < 0) return answer;
+
+    ULL _Left_copy = ((_Left << (ULL_BITS - top_Left_set - 1)) >> 1);
+    ULL _Right_copy = ((_Right << (ULL_BITS - top_Right_set - 1)) >> 1);
+    
+    int iter = to_shift + top_Left_set - top_Right_set + 1;
+    while ((--iter) >= 0) {
+        if (_Left_copy >= _Right_copy) {
+            _Left_copy -= _Right_copy;
+            if (iter < ULL_BITS)
+                answer^= (ULL(1) << iter);
+        }
+        _Left_copy <<= 1;
+    }
+
+    return answer;
+
+}
+
+
 
 
 template<std::size_t N> //for bitset
-constexpr bool to_bool(const std::bitset<N>& _base) {
-    return _base.any();
+constexpr bool to_bool(const std::bitset<N>& _Base) {
+    return _Base.any();
 }
 
 template<typename T> //for integers
-constexpr bool to_bool(T const& b) {
-    return (bool)b;
+constexpr bool to_bool(T const& _Base) {
+    return (bool)_Base;
 }
 
 #endif // !_BITSETEXTENDED_
