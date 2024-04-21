@@ -1,4 +1,4 @@
-﻿# CMakeList.txt: проект CMake для LogBaseNumeration; включите исходный код и определения,
+﻿﻿# CMakeList.txt: проект CMake для LogBaseNumeration; включите исходный код и определения,
 # укажите здесь логику для конкретного проекта.
 #
 cmake_minimum_required (VERSION 3.8)
@@ -10,12 +10,12 @@ if (POLICY CMP0141)
 endif()
 
 project ("LogBaseNumeration")
-
 # Добавьте источник в исполняемый файл этого проекта.
-add_executable (LogBaseNumeration "LogBaseNumeration.cpp" "LogBaseNumeration.h")
+# add_compile_options(/constexpr:steps10000000)
+add_executable (LogBaseNumeration "include/lns.h" "main.cpp" "include/bitsetExtended.h" "include/constexprMath.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET LogBaseNumeration PROPERTY CXX_STANDARD 20)
+  set_property(TARGET LogBaseNumeration PROPERTY CXX_STANDARD 23)
 endif()
 
 # TODO: Добавьте тесты и целевые объекты, если это необходимо.
