@@ -2,6 +2,8 @@
 #include "..\\include\\fixedpoint.h"
 #include "..\\include\\bitsetExtended.h"
 #include <complex>
+#include <random>
+
 #define _SILENCE_NONFLOATING_COMPLEX_DEPRECATION_WARNING
 template<typename NUM_TYPE>
 
@@ -171,7 +173,7 @@ int test5()
 
 	FixedPoint<500, 500> test_for_to_ULL = 123;
 	std::cout << "test_in_base: " << test_for_to_ULL << std::endl;
-	std::cout << "test_to_int: " << test_for_to_ULL << std::endl; 
+	std::cout << "test_to_int: " << test_for_to_ULL << std::endl;
 	//std::cout << i.get_base() << std::endl;
 	//std::cout << j.get_base() << std::endl;
 	//std::cout << (i * j).get_base() << std::endl;
@@ -214,6 +216,67 @@ int test6()
 	return 0;
 }
 
+void lnstest1() {
+    std::cout << "-----------test1-----------\n";
+    double a = -25.1235, b = 10, c = 25.124;
+    std::cout << "a = " << a << " b = " << b << " c = " << c << "\n";
+    lns la(a), lb(b), lc(c);
+    std::cout << "la + lb: " << la + lb << " a + b: " << a + b << "\n";
+    std::cout << "la * lb: " << la * lb << " a * b: " << a * b << "\n";
+    std::cout << "la - lb: " << la - lb << " a - b: " << a - b << "\n";
+    std::cout << "la / lb: " << la / lb << " a / b: " << a / b << "\n";
+    std::cout << "la + lb * lc: " << la + lb * lc << " a + b * c: " << a + b * c << "\n";
+    la *= lb;
+    a *= b;
+    std::cout << "la *= lb: " << la << " a *= b: " << a << "\n";
+    la += lb;
+    a += b;
+    std::cout << "la += lb: " << la << " a += b: " << a << "\n";
+    la -= lc;
+    a -= c;
+    std::cout << "la -= lc: " << la << " a -= c: " << a << "\n";
+    std::cout << "-----------test1-----------\n";
+}
+
+void lnscomplextest() {
+    std::cout << "-----------complextest-----------\n";
+    double a = 129.122194, b = 13.12423;
+    double c = 0.259834, d = 50.128745;
+    std::complex<double> z1(a, b);
+    std::complex<double> z2(c, d);
+    lns la(a), lb(b), lc(c), ld(d);
+    std::cout << "z1 = " << z1 << " z2 = " << z2 << "\n";
+    std::complex<lns<F>> lz1(la, lb), lz2(lc, ld);
+    std::cout << "lz1 + lz2: " << lz1 + lz2 << " z1 + z2: " << z1 + z2 << "\n";
+    std::cout << "lz1 * lz2: " << lz1 * lz2 << " z1 * z2: " << z1 * z2 << "\n";
+    std::cout << "lz1 - lz2: " << lz1 - lz2 << " z1 - z2: " << z1 - z2 << "\n";
+    std::cout << "lz1 / lz2: " << lz1 / lz2 << " z1 / z2: " << z1 / z2 << "\n";
+    lz1 *= lz2;
+    z1 *= z2;
+    std::cout << "lz1 *= lz2: " << lz1 << " z1 *= z2: " << z1 << "\n";
+    std::cout << "-----------complextest-----------\n";
+}
+
+void lnstest3() {
+    std::cout << "-----------test3-----------\n";
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> dist(1, 100);
+    double a = dist(gen), b = dist(gen);
+    lns la(a), lb(b);
+    std::cout << "a = " << a << " " << " b = " << b << "\n";
+    std::cout << "la * b: " << la * b << " a * b: " << a * b << "\n";
+    std::cout << "la / b: " << la / b << " a / b: " << a / b << "\n";
+    la += b;
+    a += b;
+    std::cout << "la += b: " << la << " a += b: " << a << "\n";
+    la /= b;
+    a /= b;
+    std::cout << "la /= b: " << la << " a /= b: " << a << "\n";
+    std::cout << "-----------test3-----------\n";
+}
+
+
 int main() {
 	test6();
 	using F = FixedPoint<14, 50>;
@@ -233,8 +296,10 @@ int main() {
 		std::cout << pow((F)2, log2((F)i)) << " == " << (F)i << std::endl;
 	}
 	
-
-
+	lnstest1();
+	lnscomplextest();
+	lnstest3();
+	
 	//bitset<64> i = 9;
 	//bitset<64> j = 10;
 	//bitset<64> k = div_vith_shift_left(i, j, 30);

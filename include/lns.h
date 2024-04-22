@@ -3,15 +3,12 @@
 
 #include <iostream>
 #include <cmath>
-// #include "bitset.h"
+#include "bitsetExtended.h"
+#include "fixedpoint.h"
 
-#if SIMPLE_REALIZATION
-#define STANDARD_BITSET_TYPE BITSET
-#else
-#define STANDARD_BITSET_TYPE BITSET<>
-#endif // SIMPLE_REALIZATION
+using F = FixedPoint<INT_BIT_NUMBERS, DECIMAL_BIT_NUMBERS>;
 
-template <class NUMTYPE = double>
+template <class NUMTYPE = FixedPoint<INT_BIT_NUMBERS, DECIMAL_BIT_NUMBERS>>
 class lns {
 protected:
 	NUMTYPE _logValue;
@@ -23,17 +20,17 @@ public:
 	}
 	// -----------------(end DEBUG FUNCTION)------------------------
 	// ------------------(init functions)------------------------
-	lns(bool sign = 1, NUMTYPE logvalue = 0) : _sign(sign), _logValue(logvalue) {}
+	lns(bool sign = 1, NUMTYPE logvalue = F(0)) : _sign(sign), _logValue(logvalue) {}
 	
 	template<typename oldType>
 	lns(oldType number) {
 		if (number >= 0) {
 			_sign = true;
-			_logValue = std::log2((NUMTYPE)number);
+			_logValue = log2((NUMTYPE)number);
 		}
 		else {
 			_sign = false;
-			_logValue = std::log2(-(NUMTYPE)number);
+			_logValue = log2(-(NUMTYPE)number);
 		}
 	}
 	// ------------------(end of init functions)------------------------
@@ -47,8 +44,8 @@ public:
 
 	template <typename othertype>
 	lns& operator*=(const othertype& other) {
-		this->_sign = (((NUMTYPE)other >= 0) ? this->_sign : !this->_sign);
-		this->_logValue += std::log2((NUMTYPE)other);
+		this->_sign = (((NUMTYPE)other >= F(0)) ? this->_sign : !this->_sign);
+		this->_logValue += log2((NUMTYPE)other);
 		return *this;
 	}
 
@@ -60,8 +57,8 @@ public:
 
 	template <typename othertype>
 	lns& operator/=(const othertype& other) {
-		this->_sign = (((NUMTYPE)other >= 0) ? this->_sign : !this->_sign);
-		this->_logValue -= std::log2((NUMTYPE)other);
+		this->_sign = (((NUMTYPE)other >= F(0)) ? this->_sign : !this->_sign);
+		this->_logValue -= log2((NUMTYPE)other);
 		return *this;
 	}
 	
@@ -75,8 +72,7 @@ public:
 			this->_logValue = other._logValue;
 			return operator-=(lns(1, tmp));
 		}
-		
-		this->_logValue += std::log2(1 + pow(2, other._logValue - this->_logValue));
+		this->_logValue += log2(F(1) + pow(F(2), other._logValue - this->_logValue));
 		return *this;
 	}
 
@@ -88,11 +84,11 @@ public:
 		if ((other >= 0) && !this->_sign) {
 			NUMTYPE tmp = this->_logValue;
 			this->_sign = (other >= 0) ? 1 : 0;
-			this->_logValue = std::log2((NUMTYPE)other);
-			return operator-=(pow(2, tmp));
+			this->_logValue = log2((NUMTYPE)other);
+			return operator-=(pow(F(2), tmp));
 		}
-		NUMTYPE otherlog = (other >= 0) ? std::log2((NUMTYPE)other) : std::log2(-(NUMTYPE)other);
-		this->_logValue += std::log2(1 + pow(2, otherlog  - this->_logValue));
+		NUMTYPE otherlog = (other >= 0) ? log2((NUMTYPE)other) : log2(-(NUMTYPE)other);
+		this->_logValue += log2(F(1) + pow(F(2), otherlog  - this->_logValue));
 		return *this;
 	}
 
@@ -101,14 +97,15 @@ public:
 			return operator+=(lns(1, other._logValue));
 		
 		if (other._sign && !this->_sign) {
+			NUMTYPE tmp = this->_logValue;
 			this->_sign = 0;
 			this->_logValue = other._logValue;
-			return operator+=(lns(0, other._logValue));
+			return operator+=(lns(0, tmp));
 		}
 
-		NUMTYPE sb = 1 - pow(2, other._logValue - this->_logValue);
+		NUMTYPE sb = F(1) - pow(F(2), other._logValue - this->_logValue);
 		this->_sign = ((other._logValue > this->_logValue) ? 0 : this->_sign);
-		this->_logValue += std::log2((sb >= 0) ? sb : -sb);
+		this->_logValue += log2((sb >= F(0)) ? sb : -sb);
 		return *this;
 	}
 
@@ -118,15 +115,16 @@ public:
 			return operator+=(-other);
 		
 		if ((other >= 0) && !this->_sign) {
+			NUMTYPE tmp = this->_logValue;
 			this->_sign = 0;
-			this->_logValue = std::log2((NUMTYPE)other);
-			return operator+=(-other);
+			this->_logValue = log2((NUMTYPE)other);
+			return operator+=(-tmp);
 		}
 
-		NUMTYPE otherlog = (other >= 0) ? std::log2((NUMTYPE)other) : std::log2(-(NUMTYPE)other);
-		NUMTYPE sb = 1 - pow(2, otherlog - this->_logValue);
+		NUMTYPE otherlog = (other >= 0) ? log2((NUMTYPE)other) : log2(-(NUMTYPE)other);
+		NUMTYPE sb = F(1) - pow(F(2), otherlog - this->_logValue);
 		this->_sign = (otherlog > this->_logValue) ? 0 : this->_sign;
-		this->_logValue += std::log2((sb >= 0) ? sb : -sb);
+		this->_logValue += log2((sb >= F(0)) ? sb : -sb);
 		return *this;
 	}
 
@@ -177,11 +175,11 @@ public:
 			return operator-(lns(1, other._logValue));
 		
 		if (other._sign && !this->_sign) { // return other - this
-			NUMTYPE sb = 1 - pow(2, this->_logValue - other._logValue);
-			return lns(((this->_logValue > other._logValue) ? 0 : other._logValue), other._logValue + std::log2((sb >= 0) ? sb : -sb));
+			NUMTYPE sb = F(1) - pow(F(2), this->_logValue - other._logValue);
+			return lns(((this->_logValue > other._logValue) ? 0 : other._sign), other._logValue + log2((sb >= F(0)) ? sb : -sb));
 		}
 
-		return lns(this->_sign, this->_logValue + std::log2(1 + pow(2, other._logValue - this->_logValue)));
+		return lns(this->_sign, this->_logValue + log2(F(1) + pow(F(2), other._logValue - this->_logValue)));
 	}
 
 	lns operator-(const lns& other) const {
@@ -189,11 +187,11 @@ public:
 			return operator+(lns(1, other._logValue));
 		
 		if (other._sign && !this->_sign) { // return - other - this
-			return lns(0, this->_logValue + std::log2(1 + pow(2, other._logValue - this->_logValue)));
+			return lns(0, this->_logValue + log2(F(1) + pow(F(2), other._logValue - this->_logValue)));
 		}
 
-		NUMTYPE sb = 1 - pow(2, other._logValue - this->_logValue);
-		return lns(((other._logValue > this->_logValue) ? 0 : this->_sign), this->_logValue + std::log2((sb >= 0) ? sb : -sb));
+		NUMTYPE sb = F(1) - pow(F(2), other._logValue - this->_logValue);
+		return lns(((other._logValue > this->_logValue) ? 0 : this->_sign), this->_logValue + log2((sb >= F(0)) ? sb : -sb));
 	}
 	
 
@@ -207,52 +205,52 @@ public:
 	
 	lns& operator++() {
 		if (this->_sign) {
-			this->_logValue += std::log2(1 + pow(2, -this->_logValue));
+			this->_logValue += log2(F(1) + pow(F(2), -this->_logValue));
 			return *this;
 		}
 
-		NUMTYPE sb = 1 - pow(2, this->_logValue);
-		this->_sign = (1 >= pow(2, this->_logValue)) ? 1 : 0;
-		this->_logValue = std::log2((sb >= 0) ? sb : -sb);
+		NUMTYPE sb = F(1) - pow(F(2), this->_logValue);
+		this->_sign = (F(1) >= pow(F(2), this->_logValue)) ? 1 : 0;
+		this->_logValue = log2((sb >= F(0)) ? sb : -sb);
 		return *this;
 	}
 
 	lns operator++(int) {
 		if (this->_sign) {
 			lns copy {*this};
-			this->_logValue += std::log2(1 + pow(2, -this->_logValue));
+			this->_logValue += log2(F(1) + pow(F(2), -this->_logValue));
 			return copy;
 		}
 		
 		lns copy {*this};
-		NUMTYPE sb = 1 - pow(2, this->_logValue);
-		this->_sign = (1 >= pow(2, this->_logValue)) ? 1 : 0;
-		this->_logValue = std::log2((sb >= 0) ? sb : -sb);
+		NUMTYPE sb = F(1) - pow(F(2), this->_logValue);
+		this->_sign = (F(1) >= pow(F(2), this->_logValue)) ? 1 : 0;
+		this->_logValue = log2((sb >= F(0)) ? sb : -sb);
 		return copy;
 	}
 
 	lns& operator--() {
 		if (this->_sign) {
-			this->_sign = (1 < pow(2, this->_logValue)) ? 1 : 0;
-			NUMTYPE sb = 1 - pow(2, -this->_logValue);
-			this->_logValue += std::log2((sb >= 0) ? sb : -sb);
+			this->_sign = (F(1) < pow(F(2), this->_logValue)) ? 1 : 0;
+			NUMTYPE sb = F(1) - pow(F(2), -this->_logValue);
+			this->_logValue += log2((sb >= F(0)) ? sb : -sb);
 			return *this;
 		}
-		this->_logValue += std::log2(1 + pow(2, -this->_logValue));
+		this->_logValue += log2(F(1) + pow(F(2), -this->_logValue));
 		return *this;
 	}
 
 	lns operator--(int) {
 		if (this->_sign) {
 			lns copy {*this};
-			this->_sign = (1 < pow(2, this->_logValue)) ? 1 : 0;
-			NUMTYPE sb = 1 - pow(2, -this->_logValue);
-			this->_logValue += std::log2((sb >= 0) ? sb : -sb);
+			this->_sign = (F(1) < pow(F(2), this->_logValue)) ? 1 : 0;
+			NUMTYPE sb = F(1) - pow(F(2), -this->_logValue);
+			this->_logValue += log2((sb >= F(0)) ? sb : -sb);
 			return copy;
 		}
 
 		lns copy {*this};
-		this->_logValue += std::log2(1 + pow(2, -this->_logValue));
+		this->_logValue += log2(F(1) + pow(F(2), -this->_logValue));
 		return copy;
 	}
 
@@ -269,7 +267,7 @@ public:
 	// ---------------------(Comparison and relational operators)--------------------
 	bool operator==(const lns& other) {
 		return ((this->_sign == other._sign) && (this->_logValue == other._logValue) || 
-		(this->_logValue == 0 && other._logValue == 0));
+		(this->_logValue == F(0) && other._logValue == F(0)));
 	}
 
 	bool operator<(const lns& other) {
@@ -304,11 +302,11 @@ public:
 	// ---------------------(end of comparison and relational operators)--------------------
 	template <typename TO_TYPE>
 	operator TO_TYPE() const {
-		return (TO_TYPE)((this->_sign) ? pow(2, this->_logValue) : -pow(2, this->_logValue));
+		return (TO_TYPE)((this->_sign) ? pow(F(2), this->_logValue) : -pow(F(2), this->_logValue));
 	}
 
 	friend std::ostream& operator<<(std::ostream& os, const lns<NUMTYPE>& m) {
-		os << ((m._sign) ? "" : "-") << pow(2, m._logValue);
+		os << ((m._sign) ? "" : "-") << pow(F(2), m._logValue);
 		return os;
 	}
 };
