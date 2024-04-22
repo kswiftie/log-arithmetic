@@ -34,15 +34,23 @@ using FixedPoint = double;
 #include <iostream>
 #include <bitset>
 #include <type_traits>
-#include "bitsetExtended.h"
 #include <string>
 #include <limits.h>
-#include <assert.h>
+
+#include "bitsetExtended.h"
 #include "constexprMath.h"
 
 using namespace std;
 
 
+
+
+
+
+
+#define DECIMAL_BIT_NUMBERS     44
+#define INT_BIT_NUMBERS         20
+#define OUTPUT_BY_BITS          false
 
 constexpr size_t how_sign_for_exp_m(size_t after_bits)
 {
@@ -61,14 +69,6 @@ constexpr size_t how_sign_for_exp_m(size_t after_bits)
     }
     return n;
 }
-
-
-
-
-#define DECIMAL_BIT_NUMBERS     32
-#define INT_BIT_NUMBERS         32
-#define OUTPUT_BY_BITS          false
-
 
 template<std::size_t BEFORE_DECIMAL_BITS = INT_BIT_NUMBERS, std::size_t AFTER_DECIMAL_BITS = DECIMAL_BIT_NUMBERS>
 class FixedPoint {
@@ -328,7 +328,7 @@ public:
 
     constexpr FixedPoint& operator++() {
         constexpr auto ONE = FixedPoint(1);
-        return *this += ONE;
+        return (*this += ONE);
     } //prefix
 
     constexpr FixedPoint operator++(int) {
@@ -340,7 +340,7 @@ public:
 
     constexpr FixedPoint& operator--() {
         constexpr auto ONE = FixedPoint(1);
-        return *this -= ONE;
+        return (*this -= ONE);
     } //prefix
 
     constexpr FixedPoint operator--(int) {
@@ -506,6 +506,10 @@ public:
 
     friend constexpr FixedPoint exp(const FixedPoint& other) {
         return other.exp_m();
+    }
+
+    friend constexpr FixedPoint abs(const FixedPoint& other) {
+        return other.MakeFixed(other.get_base(), true);
     }
 
     friend constexpr FixedPoint pow(const FixedPoint& base, const FixedPoint& degree) {

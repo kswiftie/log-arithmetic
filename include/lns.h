@@ -8,7 +8,7 @@
 
 using F = FixedPoint<INT_BIT_NUMBERS, DECIMAL_BIT_NUMBERS>;
 
-template <class NUMTYPE = FixedPoint<INT_BIT_NUMBERS, DECIMAL_BIT_NUMBERS>>
+template <class NUMTYPE = F>
 class lns {
 protected:
 	NUMTYPE _logValue;

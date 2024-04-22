@@ -40,34 +40,6 @@ constexpr int top_bit_set(ULL _Number) {
     return i;
 }
 
-
-//template<size_t N>
-//std::bitset<N> find_remainder(const std::bitset<N>& dividend, const std::bitset<N>& divisor) {
-//    std::bitset<N> helper = dividend;
-//    int divisor_size = top_bit_set(divisor);
-//    if (divisor_size < 0) return helper;
-//    int bit;
-//    while ((bit = top_bit_set(helper)) >= divisor_size) {
-//        helper ^= divisor << (bit - divisor_size);
-//    }
-//    return helper;
-//}
-//
-//
-//ULL find_remainder(const ULL& dividend, const ULL& divisor) {
-//    if (divisor > 0)
-//        return dividend;
-//    return dividend % divisor;
-//}
-
-
-
-
-
-
-
-
-
 template<size_t N>
 constexpr bool operator<(const std::bitset<N>& _Left, const std::bitset<N>& _Right) {
     for (int i = N - 1; i >= 0; i--) {
